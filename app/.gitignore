@@ -1,0 +1,23 @@
+/build
+# Fichiers temporaires de Word
+~$*.docx
+
+# Variables d'environnement
+.env
+.env.*
+
+# Clés privées et comptes de service
+*.jks
+*.keystore
+serviceAccountKey.json
+
+@"
+
+# Fichiers Android Studio locaux
+.idea/
+
+
+
+# Outils Firebase locaux et secrets
+Outils firebase/
+"@ | Add-Content .gitignore

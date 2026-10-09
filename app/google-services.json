@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851595146675",
+    "project_id": "gazproxi-fc89d",
+    "storage_bucket": "gazproxi-fc89d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851595146675:android:7cba764e30145f5d3447c6",
+        "android_client_info": {
+          "package_name": "com.example.gazproximite"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKyCCH0hDMvdRXjr_a8mUeYWdCjQbENM4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
