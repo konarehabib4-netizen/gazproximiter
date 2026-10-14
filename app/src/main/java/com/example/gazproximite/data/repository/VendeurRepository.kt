@@ -7,6 +7,7 @@ import com.example.gazproximite.data.model.Utilisateur
 import com.example.gazproximite.data.model.Vente
 import com.example.gazproximite.data.model.cleStock
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -68,9 +69,21 @@ class VendeurRepository {
     ): Result<Utilisateur> {
         return try {
             // Étape 1 : compte Firebase Authentication.
-            val resultat = auth.createUserWithEmailAndPassword(email.trim(), motDePasse).await()
+            // Si une inscription précédente s'est arrêtée après la création du compte
+            // (ex. refus de Firestore), l'e-mail existe déjà : on se connecte à ce compte
+            // pour terminer l'inscription.
+            val resultat = try {
+                auth.createUserWithEmailAndPassword(email.trim(), motDePasse).await()
+            } catch (e: FirebaseAuthUserCollisionException) {
+                auth.signInWithEmailAndPassword(email.trim(), motDePasse).await()
+            }
             val uid = resultat.user?.uid
                 ?: return Result.failure(Exception("Utilisateur introuvable."))
+
+            // Ce compte a déjà un dépôt : l'inscription est déjà terminée.
+            lireProfil(uid)?.takeIf { it.role == "vendeur" && it.depotId.isNotBlank() }?.let {
+                return Result.success(it)
+            }
 
             // Étape 2 : le dépôt, avec un identifiant créé par Firestore.
             val depotId = db.collection("depots").document().id
