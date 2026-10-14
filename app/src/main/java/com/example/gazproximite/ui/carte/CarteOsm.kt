@@ -2,6 +2,7 @@ package com.example.gazproximite.ui.carte
 
 import android.content.Context
 import android.location.Location
+import java.io.File
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +20,7 @@ import com.example.gazproximite.data.model.Depot
 import com.example.gazproximite.data.model.DepotAvecDistance
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint as PointCarte
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -27,6 +28,24 @@ import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+
+// Fond de carte CARTO "Voyager" : données OpenStreetMap, gratuit et sans clé.
+// Les serveurs d'OpenStreetMap (tile.openstreetmap.org) bloquent les applications,
+// on utilise donc ces serveurs prévus pour les applis.
+private val FOND_CARTE_CARTO = XYTileSource(
+    "CartoVoyager",
+    1,
+    19,
+    256,
+    ".png",
+    arrayOf(
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/",
+        "https://d.basemaps.cartocdn.com/rastertiles/voyager/"
+    ),
+    "© OpenStreetMap © CARTO"
+)
 
 // Niveau de zoom pour voir une commune entière.
 private const val ZOOM_VILLE = 12.5
@@ -145,10 +164,16 @@ private fun creerCarte(context: Context): MapView {
     Configuration.getInstance().apply {
         load(context, context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
         userAgentValue = context.packageName
+
+        // Les tuiles téléchargées sont gardées dans le cache de l'application
+        // (aucune permission de stockage n'est nécessaire).
+        val dossierCarte = File(context.cacheDir, "osmdroid")
+        osmdroidBasePath = dossierCarte
+        osmdroidTileCache = File(dossierCarte, "tiles").apply { mkdirs() }
     }
 
     return MapView(context).apply {
-        setTileSource(TileSourceFactory.MAPNIK)
+        setTileSource(FOND_CARTE_CARTO)
         setMultiTouchControls(true)
         zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         minZoomLevel = 5.0

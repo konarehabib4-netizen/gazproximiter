@@ -294,7 +294,7 @@ fun EcranDepotsList(
                         )
 
                         Text(
-                            text = "Touchez un marqueur pour voir le dépôt  •  © OpenStreetMap",
+                            text = "Touchez un marqueur pour voir le dépôt  •  © OpenStreetMap © CARTO",
                             fontSize = 10.sp,
                             color = Color.DarkGray,
                             modifier = Modifier

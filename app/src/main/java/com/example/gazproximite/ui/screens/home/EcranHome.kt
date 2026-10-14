@@ -1233,7 +1233,7 @@ fun MapPreviewSection(
 
             // Crédit obligatoire des données OpenStreetMap
             Text(
-                text = "© OpenStreetMap",
+                text = "© OpenStreetMap © CARTO",
                 fontFamily = ComfortaaBold,
                 fontSize = 9.sp,
                 color = Color.DarkGray,
@@ -1484,8 +1484,9 @@ fun DepotCardItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Format.entries.forEach { format ->
                         if (possedeFormat(depot, format)) {

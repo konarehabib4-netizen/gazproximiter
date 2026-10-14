@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import com.example.gazproximite.data.location.LocationRepository
 import com.example.gazproximite.data.model.DepotAvecDistance
 import com.example.gazproximite.data.repository.DepotDistanceRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -138,6 +139,9 @@ fun rememberDepotsProches(
                 recharger = recharger
             )
 
+        } catch (e: CancellationException) {
+            // L'écran a été quitté pendant le chargement : ce n'est pas une erreur.
+            throw e
         } catch (e: Exception) {
             // Le détail de l'erreur est visible dans Logcat (filtre "DepotsProches").
             Log.e(TAG, "Échec du chargement des dépôts", e)
