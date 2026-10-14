@@ -305,7 +305,7 @@ fun CarteScreen(
                     modifier = Modifier.align(Alignment.Start)
                 ) {
                     Text(
-                        text = "© contributeurs OpenStreetMap",
+                        text = "© contributeurs OpenStreetMap © CARTO",
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.DarkGray,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
