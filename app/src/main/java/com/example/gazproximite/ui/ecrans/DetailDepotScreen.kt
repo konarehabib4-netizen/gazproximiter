@@ -56,7 +56,8 @@ import com.example.gazproximite.ui.composants.TitreSection
 fun DetailDepotScreen(
     depotAvecDistance: DepotAvecDistance,
     context: Context,
-    onRetour: () -> Unit
+    onRetour: () -> Unit,
+    onCommander: () -> Unit = {}
 ) {
     val depot = depotAvecDistance.depot
 
@@ -210,6 +211,11 @@ fun DetailDepotScreen(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Commande en ligne de bouteilles auprès du dépôt.
+            BoutonPrincipal(texte = "Commander des bouteilles", onClick = onCommander)
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             BoutonsActionDepot(depot = depot, context = context)
 

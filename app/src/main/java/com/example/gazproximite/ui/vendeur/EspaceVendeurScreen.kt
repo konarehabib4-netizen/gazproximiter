@@ -7,6 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import android.content.Context
+import com.example.gazproximite.data.model.StatutCommande
+import com.example.gazproximite.data.repository.CommandeRepository
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Storefront
@@ -46,6 +53,7 @@ enum class OngletVendeur(
     val icone: ImageVector
 ) {
     TABLEAU("Tableau", Icons.Filled.Dashboard, Icons.Outlined.Dashboard),
+    COMMANDES("Commandes", Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong),
     STOCK("Stock", Icons.Filled.Inventory2, Icons.Outlined.Inventory2),
     VENTES("Ventes", Icons.Filled.PointOfSale, Icons.Outlined.PointOfSale),
     DEPOT("Mon dépôt", Icons.Filled.Storefront, Icons.Outlined.Storefront)
@@ -54,10 +62,13 @@ enum class OngletVendeur(
 // Espace du vendeur : son dépôt et ses ventes sont suivis en direct dans Firestore.
 @Composable
 fun EspaceVendeurScreen(
+    context: Context,
     vendeur: Utilisateur,
     vendeurRepository: VendeurRepository,
     onDeconnexion: () -> Unit
 ) {
+    val commandeRepository = remember { CommandeRepository() }
+
     var onglet by remember { mutableStateOf(OngletVendeur.TABLEAU) }
 
     // Suivi en direct du dépôt et des ventes.
@@ -70,6 +81,14 @@ fun EspaceVendeurScreen(
     }.collectAsState(initial = null)
 
     val ventes = resultatVentes?.getOrNull().orEmpty()
+
+    // Commandes des clients, suivies en direct.
+    val resultatCommandes by remember(vendeur.uid) {
+        commandeRepository.observerCommandesVendeur(vendeur.uid)
+    }.collectAsState(initial = null)
+
+    val commandes = resultatCommandes?.getOrNull().orEmpty()
+    val nouvellesCommandes = commandes.count { it.statutEnum == StatutCommande.EN_ATTENTE }
 
     // Messages courts en bas de l'écran (succès ou erreur).
     val snackbar = remember { SnackbarHostState() }
@@ -100,10 +119,19 @@ fun EspaceVendeurScreen(
                         selected = selectionne,
                         onClick = { onglet = item },
                         icon = {
-                            Icon(
-                                imageVector = if (selectionne) item.iconeSelectionnee else item.icone,
-                                contentDescription = item.libelle
-                            )
+                            // Pastille rouge : nombre de nouvelles commandes.
+                            BadgedBox(
+                                badge = {
+                                    if (item == OngletVendeur.COMMANDES && nouvellesCommandes > 0) {
+                                        Badge { Text(nouvellesCommandes.toString()) }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (selectionne) item.iconeSelectionnee else item.icone,
+                                    contentDescription = item.libelle
+                                )
+                            }
                         },
                         label = { Text(item.libelle) },
                         colors = NavigationBarItemDefaults.colors(
@@ -149,8 +177,29 @@ fun EspaceVendeurScreen(
                         vendeur = vendeur,
                         depot = depot,
                         ventes = ventes,
+                        nouvellesCommandes = nouvellesCommandes,
+                        onVoirCommandes = { onglet = OngletVendeur.COMMANDES },
                         onVoirStock = { onglet = OngletVendeur.STOCK },
                         onNouvelleVente = { onglet = OngletVendeur.VENTES }
+                    )
+
+                    OngletVendeur.COMMANDES -> CommandesVendeur(
+                        context = context,
+                        commandes = commandes,
+                        onAccepter = { commande ->
+                            executer("Commande acceptée.") { commandeRepository.accepter(commande.id) }
+                        },
+                        onRefuser = { commande, motif ->
+                            executer("Commande refusée.") { commandeRepository.refuser(commande.id, motif) }
+                        },
+                        onMarquerPrete = { commande ->
+                            executer("Commande prête.") { commandeRepository.marquerPrete(commande.id) }
+                        },
+                        onTerminer = { commande ->
+                            executer("Commande terminée : stock et ventes mis à jour.") {
+                                commandeRepository.terminer(commande.id)
+                            }
+                        }
                     )
 
                     OngletVendeur.STOCK -> StockVendeur(

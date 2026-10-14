@@ -1,12 +1,12 @@
 package com.example.gazproximite.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Storefront
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Person
@@ -31,7 +31,7 @@ enum class OngletClient(
     ACCUEIL("Accueil", Icons.Filled.Home, Icons.Outlined.Home),
     CARTE("Carte", Icons.Filled.Map, Icons.Outlined.Map),
     DEPOTS("Dépôts", Icons.Filled.Storefront, Icons.Outlined.Storefront),
-    FAVORIS("Favoris", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
+    COMMANDES("Commandes", Icons.AutoMirrored.Filled.ReceiptLong, Icons.AutoMirrored.Outlined.ReceiptLong),
     MON_COMPTE("Compte", Icons.Filled.Person, Icons.Outlined.Person)
 }
 

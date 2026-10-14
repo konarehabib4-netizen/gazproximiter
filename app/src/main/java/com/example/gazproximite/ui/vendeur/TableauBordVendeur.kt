@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Warning
@@ -50,6 +51,8 @@ fun TableauBordVendeur(
     vendeur: Utilisateur,
     depot: Depot,
     ventes: List<Vente>,
+    nouvellesCommandes: Int,
+    onVoirCommandes: () -> Unit,
     onVoirStock: () -> Unit,
     onNouvelleVente: () -> Unit
 ) {
@@ -131,6 +134,27 @@ fun TableauBordVendeur(
                     Icon(Icons.Filled.Inventory2, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Mon stock")
+                }
+            }
+
+            // Nouvelles commandes à traiter
+            if (nouvellesCommandes > 0) {
+                Button(
+                    onClick = onVoirCommandes,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Icon(Icons.Filled.NotificationsActive, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "$nouvellesCommandes nouvelle(s) commande(s) à traiter",
+                        style = MaterialTheme.typography.titleSmall
+                    )
                 }
             }
 

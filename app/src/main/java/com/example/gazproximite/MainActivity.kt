@@ -110,6 +110,7 @@ class MainActivity : ComponentActivity() {
                             LaunchedEffect(Unit) { ecranActuel = "connexion_vendeur" }
                         } else {
                             EspaceVendeurScreen(
+                                context = this,
                                 vendeur = vendeurConnecte,
                                 vendeurRepository = vendeurRepository,
                                 onDeconnexion = {

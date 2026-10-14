@@ -22,7 +22,10 @@ data class Vente(
     // Date fixée par le serveur Firebase (null tant que la vente n'est pas synchronisée).
     val date: Timestamp? = null,
 
-    val vendeurUid: String = ""
+    val vendeurUid: String = "",
+
+    // Commande d'origine, si la vente vient d'une commande client (sinon vide).
+    val commandeId: String = ""
 ) {
     // Marque et format sous forme d'enum (null si la clé est inconnue).
     @get:Exclude

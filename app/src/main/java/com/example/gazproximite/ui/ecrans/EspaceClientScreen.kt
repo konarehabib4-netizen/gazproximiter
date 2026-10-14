@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.gazproximite.data.model.DepotAvecDistance
+import com.example.gazproximite.ui.commandes.MesCommandesScreen
+import com.example.gazproximite.ui.commandes.PasserCommandeScreen
 import com.example.gazproximite.ui.navigation.BottomBar
 import com.example.gazproximite.ui.navigation.OngletClient
 
@@ -31,8 +33,16 @@ fun EspaceClientScreen(
         mutableStateOf<DepotAvecDistance?>(null)
     }
 
-    // Le bouton "retour" du téléphone ferme le détail du dépôt.
-    BackHandler(enabled = depotSelectionne != null) {
+    // Dépôt pour lequel le client prépare une commande.
+    var depotACommander by remember {
+        mutableStateOf<DepotAvecDistance?>(null)
+    }
+
+    // Le bouton "retour" du téléphone ferme la commande, puis le détail du dépôt.
+    BackHandler(enabled = depotACommander != null) {
+        depotACommander = null
+    }
+    BackHandler(enabled = depotACommander == null && depotSelectionne != null) {
         depotSelectionne = null
     }
 
@@ -50,6 +60,7 @@ fun EspaceClientScreen(
                 onOngletClique = { onglet ->
                     ongletSelectionne = onglet
                     depotSelectionne = null
+                    depotACommander = null
                 }
             )
         }
@@ -61,14 +72,32 @@ fun EspaceClientScreen(
                 .padding(paddingInterieur)
         ) {
             val depot = depotSelectionne
+            val commande = depotACommander
+
+            // Commande en cours de préparation pour un dépôt.
+            if (commande != null) {
+                PasserCommandeScreen(
+                    depot = commande.depot,
+                    context = context,
+                    onRetour = { depotACommander = null },
+                    onCommandeEnvoyee = {
+                        depotACommander = null
+                        depotSelectionne = null
+                        ongletSelectionne = OngletClient.COMMANDES
+                    }
+                )
+            }
 
             // Un dépôt choisi (depuis l'accueil ou la liste) affiche son détail.
-            if (depot != null) {
+            else if (depot != null) {
                 DetailDepotScreen(
                     depotAvecDistance = depot,
                     context = context,
                     onRetour = {
                         depotSelectionne = null
+                    },
+                    onCommander = {
+                        depotACommander = depot
                     }
                 )
             } else when (ongletSelectionne) {
@@ -106,9 +135,10 @@ fun EspaceClientScreen(
                     )
                 }
 
-                // FAVORIS : écran provisoire.
-                OngletClient.FAVORIS -> {
-                    FavorisScreen(
+                // COMMANDES : suivi des commandes du client.
+                OngletClient.COMMANDES -> {
+                    MesCommandesScreen(
+                        context = context,
                         onExplorer = {
                             ongletSelectionne = OngletClient.DEPOTS
                         }
