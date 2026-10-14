@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.gazproximite.data.model.DepotAvecDistance
 import com.example.gazproximite.data.session.UserSessionManager
 import com.example.gazproximite.ui.etat.rememberDepotsProches
+import com.example.gazproximite.ui.screens.auth.EcranInscription
 import com.example.gazproximite.ui.screens.depots.EcranDepotsList
 import com.example.gazproximite.ui.screens.details.EcranDetails
 import com.example.gazproximite.ui.screens.favorites.EcranFavorites
@@ -28,6 +29,7 @@ enum class AppScreen {
     SPLASH_1,
     SPLASH_2,
     ONBOARDING,
+    INSCRIPTION,
     HOME,
     DEPOTS_LIST,
     FAVORITES,
@@ -65,6 +67,9 @@ class MainActivity : ComponentActivity() {
                 // Écran d'où l'on vient avant d'ouvrir le détail d'un dépôt
                 var ecranPrecedent by remember { mutableStateOf(AppScreen.HOME) }
 
+                // Vrai quand on revient de l'inscription pour se connecter
+                var ouvrirConnexion by remember { mutableStateOf(false) }
+
                 // Dépôt ouvert dans l'écran de détail
                 var depotSelectionne by remember { mutableStateOf<DepotAvecDistance?>(null) }
 
@@ -98,6 +103,10 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // Le bouton "retour" du téléphone revient à l'écran précédent.
+                BackHandler(enabled = currentScreen == AppScreen.INSCRIPTION) {
+                    ouvrirConnexion = false
+                    currentScreen = AppScreen.ONBOARDING
+                }
                 BackHandler(enabled = currentScreen == AppScreen.DETAILS) {
                     currentScreen = ecranPrecedent
                 }
@@ -140,7 +149,22 @@ class MainActivity : ComponentActivity() {
                         }
                         AppScreen.ONBOARDING -> {
                             EcranOnboarding(
-                                onLoginSuccess = { currentScreen = AppScreen.HOME }
+                                onLoginSuccess = { currentScreen = AppScreen.HOME },
+                                onCreerCompte = { currentScreen = AppScreen.INSCRIPTION },
+                                ouvrirConnexion = ouvrirConnexion
+                            )
+                        }
+                        AppScreen.INSCRIPTION -> {
+                            EcranInscription(
+                                onInscriptionReussie = { currentScreen = AppScreen.HOME },
+                                onSeConnecter = {
+                                    ouvrirConnexion = true
+                                    currentScreen = AppScreen.ONBOARDING
+                                },
+                                onRetour = {
+                                    ouvrirConnexion = false
+                                    currentScreen = AppScreen.ONBOARDING
+                                }
                             )
                         }
                         AppScreen.HOME -> {

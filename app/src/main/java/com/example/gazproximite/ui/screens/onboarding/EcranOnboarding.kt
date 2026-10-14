@@ -49,15 +49,21 @@ private val OnboardingIllustrationMaxHeight: Dp = 280.dp
 @Composable
 fun EcranOnboarding(
     onLoginSuccess: () -> Unit = {},
+    onCreerCompte: () -> Unit = {},
+    ouvrirConnexion: Boolean = false,
 ) {
     // ==========================================
     // --- SECTION 1 : ÉTATS ET CONTRÔLEURS ---
     // ==========================================
-    val pagerState = rememberPagerState(pageCount = { 4 })
+    // Venant de la page d'inscription ("Se connecter"), on ouvre directement la connexion.
+    val pagerState = rememberPagerState(
+        initialPage = if (ouvrirConnexion) 3 else 0,
+        pageCount = { 4 }
+    )
     val coroutineScope = rememberCoroutineScope()
 
     // Contrôle de l'affichage du panneau BottomSheet d'authentification
-    var showAuthSheet by remember { mutableStateOf(false) }
+    var showAuthSheet by remember { mutableStateOf(ouvrirConnexion) }
 
     // ==========================================
     // --- SECTION 2 : STRUCTURATION PRINCIPALE DE L'ÉCRAN ---
@@ -222,13 +228,34 @@ fun EcranOnboarding(
                         .height(OnboardingButtonHeight)
                 ) {
                     Text(
-                        text = if (pagerState.currentPage < 3) "Suivant" else "Commencer",
+                        text = if (pagerState.currentPage < 3) "Suivant" else "Se connecter",
                         fontFamily = ComfortaaBold,
                         fontWeight = FontWeight.Bold,
                         fontSize = 28.sp,
                         color = ButtonText,
                         textAlign = TextAlign.Center,
                     )
+                }
+
+                // Bouton "Créer un compte" sur la dernière page
+                if (pagerState.currentPage == 3) {
+                    OutlinedButton(
+                        onClick = onCreerCompte,
+                        shape = RoundedCornerShape(OnboardingButtonCornerRadius),
+                        border = androidx.compose.foundation.BorderStroke(2.dp, ButtonBg),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(OnboardingButtonHeight)
+                    ) {
+                        Text(
+                            text = "Créer un compte",
+                            fontFamily = ComfortaaBold,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = ButtonBg,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }
@@ -260,7 +287,11 @@ fun EcranOnboarding(
                         showAuthSheet = false
                         onLoginSuccess()
                     },
-                    onDismiss = { showAuthSheet = false }
+                    onDismiss = { showAuthSheet = false },
+                    onCreerCompte = {
+                        showAuthSheet = false
+                        onCreerCompte()
+                    }
                 )
             }
         }

@@ -53,7 +53,7 @@ private val AuthButtonHeight: Dp = 54.dp
 private val AuthButtonCornerRadius: Dp = 25.dp
 
 // Retrouve l'activité Android (nécessaire à Firebase pour l'envoi du SMS).
-private fun Context.trouverActivite(): Activity? = when (this) {
+internal fun Context.trouverActivite(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.trouverActivite()
     else -> null
@@ -123,6 +123,7 @@ fun EcranAuthSheet(
     modifier: Modifier = Modifier,
     onSuccess: () -> Unit = {},
     onDismiss: () -> Unit = {},
+    onCreerCompte: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -316,7 +317,7 @@ fun EcranAuthSheet(
             ) {
                 Text(
                     text = when (authStep) {
-                        1 -> "Connexion / Inscription"
+                        1 -> "Connexion"
                         2 -> "Envoi en cours"
                         3 -> "Vérification du numéro"
                         4 -> "Bienvenue !"
@@ -432,6 +433,20 @@ fun EcranAuthSheet(
                         fontSize = 17.sp
                     )
                 }
+
+                // Lien vers la page d'inscription
+                Text(
+                    text = "Pas encore de compte ? Créer un compte",
+                    fontFamily = ComfortaaBold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onCreerCompte)
+                        .padding(vertical = 6.dp)
+                )
             }
             // ==========================================
             // --- ÉTAPE 2 : RECHERCHE DU COMPTE (CHARGEMENT) ---
@@ -476,70 +491,15 @@ fun EcranAuthSheet(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 6 champs de saisie de texte indépendants (Inputs de texte réactifs avec changement de couleur)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    repeat(6) { index ->
-                        val digit = if (index < otpCode.length) otpCode[index].toString() else ""
-                        val isFilled = digit.isNotEmpty()
-                        val isFocused = index == otpCode.length || (otpCode.length == 6 && index == 5)
-                        val isActive = isFilled || isFocused
-
-                        OutlinedTextField(
-                            value = digit,
-                            onValueChange = { value ->
-                                val digits = value.filter { it.isDigit() }
-                                if (digits.length > 1) {
-                                    // Collage d'un code complet de 6 chiffres
-                                    otpCode = digits.take(6)
-                                    otpError = null
-                                    if (otpCode.length == 6) {
-                                        focusRequesters[5].requestFocus()
-                                    } else {
-                                        focusRequesters[otpCode.length].requestFocus()
-                                    }
-                                } else if (digits.length == 1) {
-                                    // Saisie d'un chiffre unique
-                                    val chars = otpCode.padEnd(6, ' ').toCharArray()
-                                    chars[index] = digits[0]
-                                    otpCode = chars.concatToString().trimEnd()
-                                    otpError = null
-                                    if (index < 5) {
-                                        focusRequesters[index + 1].requestFocus()
-                                    }
-                                } else {
-                                    // Effacement (Backspace)
-                                    val chars = otpCode.padEnd(6, ' ').toCharArray()
-                                    if (index < chars.size) {
-                                        chars[index] = ' '
-                                    }
-                                    otpCode = chars.concatToString().trimEnd()
-                                    if (index > 0 && value.isEmpty()) {
-                                        focusRequesters[index - 1].requestFocus()
-                                    }
-                                }
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = if (isActive) YaDarkBlue.copy(alpha = 0.08f) else Color.White,
-                                unfocusedContainerColor = if (isActive) YaDarkBlue.copy(alpha = 0.08f) else Color.White,
-                                disabledContainerColor = if (isActive) YaDarkBlue.copy(alpha = 0.08f) else Color.White,
-                                focusedBorderColor = YaDarkBlue,
-                                unfocusedBorderColor = if (isActive) YaDarkBlue else Color.LightGray,
-                                focusedTextColor = YaDarkBlue,
-                                unfocusedTextColor = YaDarkBlue
-                            ),
-                            modifier = Modifier
-                                .size(44.dp, 52.dp)
-                                .focusRequester(focusRequesters[index])
-                        )
-                    }
-                }
+                // 6 champs de saisie du code reçu par SMS
+                ChampCodeOtp(
+                    code = otpCode,
+                    onCodeChange = {
+                        otpCode = it
+                        otpError = null
+                    },
+                    focusRequesters = focusRequesters
+                )
 
                 if (otpError != null) {
                     Text(
