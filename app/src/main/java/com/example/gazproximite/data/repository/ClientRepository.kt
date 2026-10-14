@@ -18,7 +18,8 @@ class ClientRepository {
         nom: String,
         prenom: String,
         adresse: String,
-        telephone: String
+        telephone: String,
+        email: String = ""
     ): Result<Unit> {
 
         return try {
@@ -28,6 +29,7 @@ class ClientRepository {
                 "prenom" to prenom.trim(),
                 "adresse" to adresse.trim(),
                 "telephone" to telephone.trim(),
+                "email" to email.trim(),
                 "role" to "client"
             )
 

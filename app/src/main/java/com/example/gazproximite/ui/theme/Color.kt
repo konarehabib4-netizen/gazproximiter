@@ -2,32 +2,58 @@ package com.example.gazproximite.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// =========================================================
-// CHARTE GRAPHIQUE GAZPROXIMITÉ
-// =========================================================
+/**
+ * [YaGazPalette] centralise toutes les couleurs et palettes de l'application.
+ * Vous pouvez modifier n'importe quelle couleur ici pour changer l'apparence globale du projet.
+ */
+object YaGazPalette {
+    // --- Palette de base YaGaz (Tons bleus signature) ---
+    val OxfordByNight   = Color(0xFF061C2C) // Très sombre / Proche du noir
+    val NatoBlue        = Color(0xFF193347) // Bleu marine profond
+    val Nato2           = Color(0xFF3B5264) // Bleu intermédiaire
+    val BlueFedora      = Color(0xFF334B60) // Bleu moyen élégant
+    val PrairieDenim    = Color(0xFF4F6478) // Bleu denim poudré
+    val BluePrince      = Color(0xFF6C7F91) // Bleu gris doux
+    val Foghorn         = Color(0xFF91A1B2) // Gris bleuté clair
+    val PowderSoftBlue  = Color(0xFFB7C7D6) // Bleu très doux
 
-// Orange "flamme" : couleur principale de la marque.
-val Flamme = Color(0xFFF26A1B)
-val FlammeFonce = Color(0xFFC94F0C)
-val FlammeClair = Color(0xFFFFE3D1)
+    // --- Alias fonctionnels ---
+    val DarkBlue   = OxfordByNight
+    val Blue       = NatoBlue
+    val BlueMedium = BlueFedora
+    val SplashBg   = PrairieDenim
+    val TextPrimary = OxfordByNight
+    val TextSecondary = BluePrince
+    val ButtonBg   = NatoBlue
+    val ButtonText = Foghorn
 
-// Bleu nuit : couleur secondaire (textes forts, en-têtes).
-val BleuNuit = Color(0xFF14213D)
-val BleuNuitClair = Color(0xFF2B3A5C)
+    // --- Fonds et Surfaces ---
+    val Background = Color(0xFFF0F4F8) // Fond général (très doux)
+    val SurfaceVariant = Color(0xFFE2EBF3) // Surface claire bleutée
+    val CardBackground = Color(0xFFFAFCFF) // Fond de carte subtil
+    val White = Color(0xFFFFFFFF)
+    val Black = Color(0xFF000000)
+    val Transparent = Color(0x00000000)
+}
 
-// Fonds et surfaces.
-val FondClair = Color(0xFFF6F7FB)
-val SurfaceClaire = Color(0xFFFFFFFF)
-val ContourClair = Color(0xFFE3E6EE)
-val TexteSecondaire = Color(0xFF6B7280)
+// Rétrocompatibilité avec les variables top-level existantes
+val OxfordByNight   = YaGazPalette.OxfordByNight
+val NatoBlue        = YaGazPalette.NatoBlue
+val Nato2           = YaGazPalette.Nato2
+val BlueFedora      = YaGazPalette.BlueFedora
+val PrairieDenim    = YaGazPalette.PrairieDenim
+val BluePrince      = YaGazPalette.BluePrince
+val Foghorn         = YaGazPalette.Foghorn
+val PowderSoftBlue  = YaGazPalette.PowderSoftBlue
 
-val FondSombre = Color(0xFF0E1320)
-val SurfaceSombre = Color(0xFF182033)
+val YaDarkBlue   = YaGazPalette.DarkBlue
+val YaBlue       = YaGazPalette.Blue
+val YaBlue2      = YaGazPalette.BlueMedium
+val SplashBg     = YaGazPalette.SplashBg
+val TextGrayBlue = YaGazPalette.TextSecondary
+val ButtonBg     = YaGazPalette.ButtonBg
+val ButtonText   = YaGazPalette.ButtonText
 
-// Couleurs utilisées pour l'état des dépôts et des stocks.
-val VertDisponible = Color(0xFF1E9E5A)
-val VertDisponibleClair = Color(0xFFDDF5E8)
-val RougeRupture = Color(0xFFD93A3A)
-val RougeRuptureClair = Color(0xFFFBE1E1)
-val GrisInconnu = Color(0xFF9AA1AE)
-val GrisInconnuClair = Color(0xFFEEF0F3)
+val AppBackground  = YaGazPalette.Background
+val SurfaceVariant = YaGazPalette.SurfaceVariant
+val CardBackground = YaGazPalette.CardBackground

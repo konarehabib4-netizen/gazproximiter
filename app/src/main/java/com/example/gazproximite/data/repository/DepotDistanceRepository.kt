@@ -3,6 +3,7 @@ import android.content.Context
 import com.example.gazproximite.data.location.LocationRepository
 import com.example.gazproximite.data.location.calculerDistanceMetres
 import com.example.gazproximite.data.model.DepotAvecDistance
+import com.example.gazproximite.data.model.depotsSimulation
 
 class DepotDistanceRepository(context: Context) {
 
@@ -14,14 +15,18 @@ class DepotDistanceRepository(context: Context) {
 
     // Retourne les dépôts avec leur distance par rapport au client,
     // ou null si la position du client n'a pas pu être obtenue.
-    suspend fun recupererDepotsAvecDistance(): List<DepotAvecDistance>? {
+    // Avec inclureSimulation, les dépôts fictifs de démonstration sont ajoutés.
+    suspend fun recupererDepotsAvecDistance(
+        inclureSimulation: Boolean = false
+    ): List<DepotAvecDistance>? {
 
         // Étape 1 : récupérer la position du client.
         val positionClient = locationRepository.recupererPosition()
             ?: return null
 
         // Étape 2 : récupérer les dépôts enregistrés dans Firestore.
-        val depots = depotRepository.recupererDepots()
+        val depots = depotRepository.recupererDepots() +
+                if (inclureSimulation) depotsSimulation else emptyList()
 
         // Étape 3 : calculer la distance pour chaque dépôt.
         return depots.mapNotNull { depot ->

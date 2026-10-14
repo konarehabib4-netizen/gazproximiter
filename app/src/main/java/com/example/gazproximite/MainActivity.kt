@@ -1,96 +1,204 @@
 package com.example.gazproximite
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import com.example.gazproximite.data.model.DepotAvecDistance
+import com.example.gazproximite.data.session.UserSessionManager
+import com.example.gazproximite.ui.etat.rememberDepotsProches
+import com.example.gazproximite.ui.screens.depots.EcranDepotsList
+import com.example.gazproximite.ui.screens.details.EcranDetails
+import com.example.gazproximite.ui.screens.favorites.EcranFavorites
+import com.example.gazproximite.ui.screens.home.EcranHome
+import com.example.gazproximite.ui.screens.onboarding.EcranOnboarding
+import com.example.gazproximite.ui.screens.profile.EcranProfile
+import com.example.gazproximite.ui.screens.splash.Ecran1Splash
+import com.example.gazproximite.ui.screens.splash.Ecran2Presentation
+import com.example.gazproximite.ui.theme.YaGazTheme
 
-import com.example.gazproximite.data.repository.ClientAuthRepository
-import com.example.gazproximite.data.repository.ClientRepository
-import com.example.gazproximite.ui.theme.GazproximiteTheme
+enum class AppScreen {
+    SPLASH_1,
+    SPLASH_2,
+    ONBOARDING,
+    HOME,
+    DEPOTS_LIST,
+    FAVORITES,
+    PROFILE,
+    DETAILS
+}
 
-import com.example.gazproximite.ui.ecrans.AccueilScreen
-import com.example.gazproximite.ui.ecrans.ConnexionClientScreen
-import com.example.gazproximite.ui.ecrans.InscriptionClientScreen
-import com.example.gazproximite.ui.ecrans.EspaceClientScreen
+// Écrans de l'espace client (après la connexion).
+private val ecransConnectes = setOf(
+    AppScreen.HOME,
+    AppScreen.DEPOTS_LIST,
+    AppScreen.FAVORITES,
+    AppScreen.PROFILE,
+    AppScreen.DETAILS
+)
 
 class MainActivity : ComponentActivity() {
-
-    // Gère l'authentification du client par SMS.
-    private val authRepository = ClientAuthRepository()
-
-    // Gère le profil client enregistré dans Firestore.
-    private val clientRepository = ClientRepository()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                scrim = Color.TRANSPARENT,
+                darkScrim = Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.light(
+                scrim = Color.TRANSPARENT,
+                darkScrim = Color.TRANSPARENT
+            )
+        )
         setContent {
-            GazproximiteTheme {
+            YaGazTheme {
+                val context = LocalContext.current
+                var currentScreen by remember { mutableStateOf(AppScreen.SPLASH_1) }
 
-                // Écran affiché actuellement.
-                var ecranActuel by remember {
-                    mutableStateOf("accueil")
+                // Écran d'où l'on vient avant d'ouvrir le détail d'un dépôt
+                var ecranPrecedent by remember { mutableStateOf(AppScreen.HOME) }
+
+                // Dépôt ouvert dans l'écran de détail
+                var depotSelectionne by remember { mutableStateOf<DepotAvecDistance?>(null) }
+
+                // Préférences gardées sur le téléphone
+                var favoris by remember { mutableStateOf(UserSessionManager.getFavoris(context)) }
+                var modeDemo by remember { mutableStateOf(UserSessionManager.isModeDemo(context)) }
+
+                // Dépôts réels (Firestore) chargés une seule fois pour tous les écrans,
+                // seulement quand le client est dans son espace.
+                val dansEspaceClient = currentScreen in ecransConnectes
+                val etatDepots = if (dansEspaceClient) {
+                    rememberDepotsProches(context, inclureSimulation = modeDemo)
+                } else {
+                    null
                 }
 
-                when (ecranActuel) {
-
-                    // Écran de présentation avant la connexion.
-                    "accueil" -> {
-                        AccueilScreen(
-                            onSeConnecter = {
-                                ecranActuel = "connexion"
-                            },
-                            onCreerCompte = {
-                                ecranActuel = "inscription"
-                            }
-                        )
+                val handleTabSelected: (Int) -> Unit = { tabIndex ->
+                    currentScreen = when (tabIndex) {
+                        0 -> AppScreen.HOME
+                        1 -> AppScreen.DEPOTS_LIST
+                        2 -> AppScreen.FAVORITES
+                        3 -> AppScreen.PROFILE
+                        else -> AppScreen.HOME
                     }
+                }
 
-                    // Connexion du client par SMS.
-                    "connexion" -> {
-                        ConnexionClientScreen(
-                            activity = this,
-                            authRepository = authRepository,
-                            clientRepository = clientRepository,
-                            onRetourAccueil = {
-                                ecranActuel = "accueil"
-                            },
-                            onConnexionReussie = { _ ->
-                                // Après la connexion, ouvrir l'espace client.
-                                ecranActuel = "espace_client"
+                val ouvrirDetail: (DepotAvecDistance) -> Unit = { depot ->
+                    depotSelectionne = depot
+                    ecranPrecedent = currentScreen
+                    currentScreen = AppScreen.DETAILS
+                }
+
+                // Le bouton "retour" du téléphone revient à l'écran précédent.
+                BackHandler(enabled = currentScreen == AppScreen.DETAILS) {
+                    currentScreen = ecranPrecedent
+                }
+                BackHandler(
+                    enabled = currentScreen in setOf(
+                        AppScreen.DEPOTS_LIST,
+                        AppScreen.FAVORITES,
+                        AppScreen.PROFILE
+                    )
+                ) {
+                    currentScreen = AppScreen.HOME
+                }
+
+                AnimatedContent(
+                    targetState = currentScreen,
+                    transitionSpec = {
+                        (fadeIn(animationSpec = tween(400)) + slideInHorizontally(animationSpec = tween(400)) { width -> width / 4 })
+                            .togetherWith(fadeOut(animationSpec = tween(400)) + slideOutHorizontally(animationSpec = tween(400)) { width -> -width / 4 })
+                    },
+                    label = "screenTransition"
+                ) { screen ->
+                    when (screen) {
+                        AppScreen.SPLASH_1 -> {
+                            Ecran1Splash(
+                                onFinish = {
+                                    // Si le client est déjà connecté (session Firebase active),
+                                    // on contourne les écrans de présentation.
+                                    currentScreen = if (UserSessionManager.isLoggedIn(context)) {
+                                        AppScreen.HOME
+                                    } else {
+                                        AppScreen.SPLASH_2
+                                    }
+                                }
+                            )
+                        }
+                        AppScreen.SPLASH_2 -> {
+                            Ecran2Presentation(
+                                onFinish = { currentScreen = AppScreen.ONBOARDING }
+                            )
+                        }
+                        AppScreen.ONBOARDING -> {
+                            EcranOnboarding(
+                                onLoginSuccess = { currentScreen = AppScreen.HOME }
+                            )
+                        }
+                        AppScreen.HOME -> {
+                            etatDepots?.let { etat ->
+                                EcranHome(
+                                    etat = etat,
+                                    onDepotClick = ouvrirDetail,
+                                    onTabSelected = handleTabSelected
+                                )
                             }
-                        )
-                    }
-
-                    // Inscription du nouveau client.
-                    "inscription" -> {
-                        InscriptionClientScreen(
-                            activity = this,
-                            authRepository = authRepository,
-                            clientRepository = clientRepository,
-                            onRetourAccueil = {
-                                ecranActuel = "accueil"
+                        }
+                        AppScreen.DEPOTS_LIST -> {
+                            etatDepots?.let { etat ->
+                                EcranDepotsList(
+                                    etat = etat,
+                                    onDepotClick = ouvrirDetail,
+                                    onTabSelected = handleTabSelected
+                                )
                             }
-                        )
-                    }
-
-                    // Espace privé accessible après la connexion.
-                    "espace_client" -> {
-                        EspaceClientScreen(
-                            context = this,
-                            onDeconnexion = {
-                                authRepository.deconnecter()
-
-                                // Retour à l'écran de départ après déconnexion.
-                                ecranActuel = "accueil"
+                        }
+                        AppScreen.FAVORITES -> {
+                            etatDepots?.let { etat ->
+                                EcranFavorites(
+                                    etat = etat,
+                                    favoris = favoris,
+                                    onDepotClick = ouvrirDetail,
+                                    onTabSelected = handleTabSelected
+                                )
                             }
-                        )
+                        }
+                        AppScreen.PROFILE -> {
+                            EcranProfile(
+                                modeDemo = modeDemo,
+                                onModeDemoChange = { actif ->
+                                    modeDemo = actif
+                                    UserSessionManager.setModeDemo(context, actif)
+                                },
+                                onTabSelected = handleTabSelected,
+                                onLogout = { currentScreen = AppScreen.ONBOARDING }
+                            )
+                        }
+                        AppScreen.DETAILS -> {
+                            val depot = depotSelectionne
+                            if (depot == null) {
+                                // Aucun dépôt choisi : retour à l'accueil.
+                                LaunchedEffect(Unit) { currentScreen = AppScreen.HOME }
+                            } else {
+                                EcranDetails(
+                                    depotAvecDistance = depot,
+                                    estFavori = depot.depot.id in favoris,
+                                    onFavoriClick = {
+                                        favoris = UserSessionManager.basculerFavori(context, depot.depot.id)
+                                    },
+                                    onBackClick = { currentScreen = ecranPrecedent },
+                                    onTabSelected = handleTabSelected
+                                )
+                            }
+                        }
                     }
                 }
             }
