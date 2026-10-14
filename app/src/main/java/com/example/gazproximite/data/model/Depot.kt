@@ -16,6 +16,12 @@ data class Depot(
     var heureFermeture: String = "",
     var proprietaireUid: String = "",
     var stock: Map<String, Boolean> = emptyMap(),
+
+    // Nombre de bouteilles en stock par clé "marque_format" (géré par le vendeur).
+    var quantites: Map<String, Long> = emptyMap(),
+
+    // Prix de vente en F CFA par clé "marque_format" (géré par le vendeur).
+    var prix: Map<String, Long> = emptyMap(),
     var misAJourLe: Timestamp? = null,
 
     // Lien (https://...) vers une photo du dépôt. Facultatif :

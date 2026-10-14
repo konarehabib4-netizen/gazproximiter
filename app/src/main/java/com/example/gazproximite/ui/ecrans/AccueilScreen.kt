@@ -24,12 +24,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +50,8 @@ import com.example.gazproximite.ui.theme.Flamme
 @Composable
 fun AccueilScreen(
     onSeConnecter: () -> Unit,
-    onCreerCompte: () -> Unit
+    onCreerCompte: () -> Unit,
+    onEspaceVendeur: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -181,6 +184,22 @@ fun AccueilScreen(
                 )
             ) {
                 Text("Créer un compte", style = MaterialTheme.typography.titleMedium)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Accès réservé aux vendeurs de gaz.
+            TextButton(
+                onClick = onEspaceVendeur,
+                colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Storefront,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Vous êtes vendeur ? Espace vendeur", style = MaterialTheme.typography.labelLarge)
             }
         }
     }

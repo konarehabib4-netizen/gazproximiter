@@ -162,6 +162,10 @@ class DepotRepository {
         val stockInitial =
             mutableMapOf<String, Boolean>()
 
+        // Quantités et prix de départ (le vendeur les renseigne ensuite).
+        val quantitesInitiales =
+            mutableMapOf<String, Long>()
+
 
         // Création des différentes combinaisons à partir
         // des enums Marque et Format, avec la même fonction
@@ -171,6 +175,7 @@ class DepotRepository {
             for (format in Format.entries) {
 
                 stockInitial[cleStock(marque, format)] = false
+                quantitesInitiales[cleStock(marque, format)] = 0L
             }
         }
 
@@ -212,6 +217,12 @@ class DepotRepository {
 
                 // Stock initial du dépôt.
                 "stock" to stockInitial,
+
+                // Aucune bouteille au départ.
+                "quantites" to quantitesInitiales,
+
+                // Prix non renseignés au départ.
+                "prix" to emptyMap<String, Long>(),
 
                 // Firebase ajoute automatiquement
                 // la date et l'heure du serveur.
