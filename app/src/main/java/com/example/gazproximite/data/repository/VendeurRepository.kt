@@ -80,43 +80,57 @@ class VendeurRepository {
             val uid = resultat.user?.uid
                 ?: return Result.failure(Exception("Utilisateur introuvable."))
 
-            // Ce compte a déjà un dépôt : l'inscription est déjà terminée.
-            lireProfil(uid)?.takeIf { it.role == "vendeur" && it.depotId.isNotBlank() }?.let {
-                return Result.success(it)
+            // Étape 2 : le profil vendeur, AVANT le dépôt.
+            // Les règles Firestore n'autorisent la création d'un dépôt que si le
+            // profil "vendeur" existe déjà. Elles interdisent aussi de modifier un
+            // profil : s'il existe déjà (inscription interrompue), on le réutilise.
+            val profilExistant = lireProfil(uid)
+
+            val vendeur = if (profilExistant != null) {
+                if (profilExistant.role != "vendeur" || profilExistant.depotId.isBlank()) {
+                    return Result.failure(
+                        Exception("Ce compte existe déjà mais n'est pas un compte vendeur.")
+                    )
+                }
+                profilExistant
+            } else {
+                // Identifiant du futur dépôt, réservé dès maintenant.
+                val depotId = db.collection("depots").document().id
+                val nouveauProfil = Utilisateur(
+                    uid = uid,
+                    nom = nom.trim(),
+                    prenom = prenom.trim(),
+                    telephone = telephone.trim(),
+                    email = email.trim(),
+                    role = "vendeur",
+                    depotId = depotId
+                )
+                db.collection("utilisateurs").document(uid).set(
+                    hashMapOf(
+                        "nom" to nouveauProfil.nom,
+                        "prenom" to nouveauProfil.prenom,
+                        "telephone" to nouveauProfil.telephone,
+                        "email" to nouveauProfil.email,
+                        "role" to "vendeur",
+                        "depotId" to depotId
+                    )
+                ).await()
+                nouveauProfil
             }
 
-            // Étape 2 : le dépôt, avec un identifiant créé par Firestore.
-            val depotId = db.collection("depots").document().id
-            depotRepository.creerDepot(
-                depotId = depotId,
-                nom = nomDepot.trim(),
-                commune = commune.trim(),
-                telephone = telephone.trim(),
-                latitude = latitude,
-                longitude = longitude,
-                proprietaireUid = uid
-            )
-
-            // Étape 3 : le profil vendeur, relié à son dépôt.
-            val vendeur = Utilisateur(
-                uid = uid,
-                nom = nom.trim(),
-                prenom = prenom.trim(),
-                telephone = telephone.trim(),
-                email = email.trim(),
-                role = "vendeur",
-                depotId = depotId
-            )
-            db.collection("utilisateurs").document(uid).set(
-                hashMapOf(
-                    "nom" to vendeur.nom,
-                    "prenom" to vendeur.prenom,
-                    "telephone" to vendeur.telephone,
-                    "email" to vendeur.email,
-                    "role" to "vendeur",
-                    "depotId" to depotId
+            // Étape 3 : le dépôt, s'il n'a pas encore été créé.
+            val depotExiste = refDepot(vendeur.depotId).get().await().exists()
+            if (!depotExiste) {
+                depotRepository.creerDepot(
+                    depotId = vendeur.depotId,
+                    nom = nomDepot.trim(),
+                    commune = commune.trim(),
+                    telephone = telephone.trim(),
+                    latitude = latitude,
+                    longitude = longitude,
+                    proprietaireUid = uid
                 )
-            ).await()
+            }
 
             Result.success(vendeur)
         } catch (e: Exception) {
