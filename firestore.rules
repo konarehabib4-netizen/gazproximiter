@@ -1,0 +1,143 @@
+rules_version = '2';
+
+// Règles de sécurité Firestore de GazProximité.
+// À copier dans la console Firebase → Firestore Database → Règles, puis « Publier ».
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+    // Profil Firestore de l'utilisateur connecté.
+    function profil() {
+      return get(/databases/$(database)/documents/utilisateurs/$(request.auth.uid)).data;
+    }
+
+    // =========================================================
+    // DÉPÔTS
+    // =========================================================
+
+    match /depots/{depotId} {
+
+      // Un utilisateur connecté peut consulter les dépôts.
+      allow read: if request.auth != null;
+
+      // Un vendeur connecté peut créer son propre dépôt.
+      allow create: if request.auth != null
+                    && request.resource.data.proprietaireUid == request.auth.uid
+                    && profil().role == "vendeur";
+
+      // Un vendeur peut modifier uniquement son propre dépôt
+      // (stock, quantités, prix, ouverture, informations).
+      allow update: if request.auth != null
+                    && profil().role == "vendeur"
+                    && profil().depotId == depotId;
+
+      // Suppression interdite.
+      allow delete: if false;
+
+
+      // -------------------------------------------------------
+      // VENTES DU DÉPÔT : réservées à son vendeur
+      // -------------------------------------------------------
+      match /ventes/{venteId} {
+        allow read, create, delete: if request.auth != null
+                                    && profil().role == "vendeur"
+                                    && profil().depotId == depotId;
+
+        // Une vente ne se modifie pas : on l'annule et on en refait une.
+        allow update: if false;
+      }
+    }
+
+
+    // =========================================================
+    // COMMANDES (client ↔ vendeur)
+    // =========================================================
+
+    match /commandes/{commandeId} {
+
+      function estLeClient() {
+        return request.auth != null && resource.data.clientUid == request.auth.uid;
+      }
+
+      function estLeVendeur() {
+        return request.auth != null && resource.data.proprietaireUid == request.auth.uid;
+      }
+
+      // Seuls le client et le vendeur concernés voient la commande.
+      allow read: if estLeClient() || estLeVendeur();
+
+      // Le client crée sa commande, toujours « en attente ».
+      allow create: if request.auth != null
+                    && request.resource.data.clientUid == request.auth.uid
+                    && request.resource.data.statut == "en_attente"
+                    && request.resource.data.lignes is list
+                    && request.resource.data.lignes.size() > 0;
+
+      allow update: if
+        // Le client peut seulement annuler une commande encore en attente.
+        (estLeClient()
+          && resource.data.statut == "en_attente"
+          && request.resource.data.statut == "annulee"
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(["statut", "misAJourLe"]))
+        ||
+        // Le vendeur fait avancer la commande (statut et motif de refus uniquement).
+        (estLeVendeur()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(["statut", "motifRefus", "misAJourLe"]));
+
+      // Suppression interdite : l'historique est conservé.
+      allow delete: if false;
+    }
+
+
+    // =========================================================
+    // UTILISATEURS
+    // =========================================================
+
+    match /utilisateurs/{userId} {
+
+      // Un utilisateur peut lire uniquement son propre profil.
+      allow read: if request.auth != null
+                  && request.auth.uid == userId;
+
+
+      // Création de son propre profil client ou vendeur.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && (
+                      // PROFIL CLIENT
+                      (
+                        request.resource.data.role == "client"
+                        && request.resource.data.keys().hasAll([
+                          "nom",
+                          "prenom",
+                          "adresse",
+                          "telephone",
+                          "role"
+                        ])
+                        && request.resource.data.nom is string
+                        && request.resource.data.nom.size() > 0
+                        && request.resource.data.prenom is string
+                        && request.resource.data.prenom.size() > 0
+                        && request.resource.data.adresse is string
+                        && request.resource.data.telephone is string
+                        && request.resource.data.telephone.size() > 0
+                      )
+
+                      ||
+
+                      // PROFIL VENDEUR
+                      request.resource.data.role == "vendeur"
+                    );
+
+
+      // Modification interdite pour le moment.
+      allow update: if false;
+
+      // Suppression interdite.
+      allow delete: if false;
+    }
+  }
+}
