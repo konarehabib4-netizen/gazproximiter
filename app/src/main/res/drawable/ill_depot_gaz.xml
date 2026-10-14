@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Illustration d'un dépôt de gaz : entrepôt et bouteilles empilées.
+     Affichée quand le dépôt n'a pas de photo (champ "photoUrl" vide). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="160dp"
+    android:viewportWidth="240"
+    android:viewportHeight="160">
+
+    <!-- Ciel et soleil -->
+    <path android:fillColor="#FFE9DB" android:pathData="M0,0h240v160h-240z" />
+    <path android:fillColor="#FFC27A" android:pathData="M186,30a14,14 0,1 0,28 0a14,14 0,1 0,-28 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.8" android:pathData="M18,30a10,10 0,0 1,18 -4a8,8 0,0 1,12 7h-30z" />
+
+    <!-- Sol -->
+    <path android:fillColor="#E8D5C4" android:pathData="M0,132h240v28h-240z" />
+    <path android:fillColor="#D9C2AE" android:pathData="M0,132h240v4h-240z" />
+
+    <!-- Entrepôt -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,62h130v70h-130z" />
+    <path android:fillColor="#14213D" android:pathData="M22,66L95,30L168,66Z" />
+    <path android:fillColor="#2B3A5C" android:pathData="M30,66h130v4h-130z" />
+
+    <!-- Enseigne avec flamme -->
+    <path android:fillColor="#F26A1B" android:pathData="M74,44h42a3,3 0,0 1,3 3v10a3,3 0,0 1,-3 3h-42a3,3 0,0 1,-3 -3v-10a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M95,46.5c3,3 5,5.5 5,8c0,2.8 -2.2,4.5 -5,4.5s-5,-1.7 -5,-4.5c0,-1.8 1,-3 2,-4c0,1.4 0.7,2.3 1.6,2.3c0,-2.7 0.5,-4.4 1.4,-6.3z" />
+
+    <!-- Porte de garage -->
+    <path android:fillColor="#2B3A5C" android:pathData="M46,80h62v52h-62z" />
+    <path android:fillColor="#3E4F75" android:pathData="M46,88h62v3h-62zM46,98h62v3h-62zM46,108h62v3h-62zM46,118h62v3h-62z" />
+
+    <!-- Fenêtre -->
+    <path android:fillColor="#BFD7F2" android:pathData="M118,82h30v22h-30z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M132,82h2v22h-2zM118,92h30v2h-30z" />
+
+    <!-- Bouteilles de gaz empilées -->
+    <path android:fillColor="#14213D" android:pathData="M173,96h8v6h-8z" />
+    <path android:fillColor="#F26A1B" android:pathData="M171,102h12a3,3 0,0 1,3 3v24a3,3 0,0 1,-3 3h-12a3,3 0,0 1,-3 -3v-24a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.9" android:pathData="M168,112h18v6h-18z" />
+    <path android:fillColor="#14213D" android:pathData="M195,96h8v6h-8z" />
+    <path android:fillColor="#E2231A" android:pathData="M193,102h12a3,3 0,0 1,3 3v24a3,3 0,0 1,-3 3h-12a3,3 0,0 1,-3 -3v-24a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.9" android:pathData="M190,112h18v6h-18z" />
+    <path android:fillColor="#14213D" android:pathData="M217,96h8v6h-8z" />
+    <path android:fillColor="#1565C0" android:pathData="M215,102h12a3,3 0,0 1,3 3v24a3,3 0,0 1,-3 3h-12a3,3 0,0 1,-3 -3v-24a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.9" android:pathData="M212,112h18v6h-18z" />
+    <path android:fillColor="#14213D" android:pathData="M184,60h8v6h-8z" />
+    <path android:fillColor="#E8B400" android:pathData="M182,66h12a3,3 0,0 1,3 3v24a3,3 0,0 1,-3 3h-12a3,3 0,0 1,-3 -3v-24a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.9" android:pathData="M179,76h18v6h-18z" />
+    <path android:fillColor="#14213D" android:pathData="M206,60h8v6h-8z" />
+    <path android:fillColor="#2E7D32" android:pathData="M204,66h12a3,3 0,0 1,3 3v24a3,3 0,0 1,-3 3h-12a3,3 0,0 1,-3 -3v-24a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.9" android:pathData="M201,76h18v6h-18z" />
+</vector>

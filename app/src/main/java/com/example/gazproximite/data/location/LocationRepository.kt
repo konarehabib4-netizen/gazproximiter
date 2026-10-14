@@ -5,7 +5,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationManager
 import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.tasks.await
@@ -16,6 +18,15 @@ class LocationRepository(
     // Service Android qui permet de récupérer la position du téléphone.
     private val fusedLocationClient =
         LocationServices.getFusedLocationProviderClient(context)
+
+    // Vérifie si la localisation (GPS) est activée dans les réglages du téléphone.
+    // Même avec la permission, aucune position n'est disponible si elle est coupée.
+    fun localisationActivee(): Boolean {
+        val locationManager =
+            context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        return LocationManagerCompat.isLocationEnabled(locationManager)
+    }
 
     // Vérifie si Android a déjà autorisé l'accès à la position.
     fun localisationAutorisee(): Boolean {

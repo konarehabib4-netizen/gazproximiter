@@ -1,16 +1,33 @@
 package com.example.gazproximite.ui.ecrans
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,9 +37,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.gazproximite.data.model.Utilisateur
 import com.example.gazproximite.data.repository.ClientRepository
+import com.example.gazproximite.ui.composants.Chargement
+import com.example.gazproximite.ui.composants.EnTeteDegrade
+import com.example.gazproximite.ui.composants.EtatVide
+import com.example.gazproximite.ui.composants.LigneInfo
+import com.example.gazproximite.ui.composants.TitreSection
+import com.example.gazproximite.ui.theme.Flamme
 import com.google.firebase.auth.FirebaseAuth
 
 // Onglet "Mon compte" : profil du client et déconnexion.
@@ -73,108 +98,151 @@ fun MonCompteScreen(
         }
     }
 
+    // Copie locale pour pouvoir utiliser le profil sans "?".
+    val profilCharge = profil
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .verticalScroll(rememberScrollState())
     ) {
-        Text(
-            text = "Mon compte",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        EnTeteDegrade(
+            titre = "Mon compte",
+            sousTitre = "Gérez vos informations personnelles"
+        ) {
+            if (profilCharge != null) {
+                Spacer(modifier = Modifier.height(18.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Avatar(profil = profilCharge)
 
-        Text(
-            text = "Gérez vos informations personnelles",
-            style = MaterialTheme.typography.bodyMedium
-        )
+                    Spacer(modifier = Modifier.width(14.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Copie locale pour pouvoir utiliser le profil sans "?".
-        val profilCharge = profil
-
-        when {
-            chargement -> {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Chargement de votre profil...")
-            }
-
-            profilCharge != null -> {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 3.dp
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp)
-                    ) {
-                        Text(
-                            text = "👤",
-                            style = MaterialTheme.typography.headlineLarge
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
+                    Column {
                         Text(
                             text = "${profilCharge.prenom} ${profilCharge.nom}".trim()
                                 .ifBlank { "Client GazProximité" },
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White
                         )
 
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Text("📱 Téléphone")
-                        Text(
-                            text = profilCharge.telephone.ifBlank {
-                                "Non renseigné"
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text("📍 Adresse")
-                        Text(
-                            text = profilCharge.adresse.ifBlank {
-                                "Non renseignée"
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text("Compte")
                         Text(
                             text = if (profilCharge.role == "client") {
                                 "Client GazProximité"
                             } else {
-                                profilCharge.role.ifBlank { "Non renseigné" }
-                            }
+                                profilCharge.role.ifBlank { "Compte" }
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.85f)
                         )
+                    }
+                }
+            }
+        }
+
+        when {
+            chargement -> {
+                Chargement(
+                    texte = "Chargement de votre profil...",
+                    modifier = Modifier.height(260.dp)
+                )
+            }
+
+            profilCharge != null -> {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    TitreSection(
+                        titre = "Informations",
+                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                    )
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            LigneInfo(
+                                icone = Icons.Filled.Phone,
+                                libelle = "Téléphone",
+                                valeur = profilCharge.telephone.ifBlank { "Non renseigné" }
+                            )
+
+                            LigneInfo(
+                                icone = Icons.Filled.Home,
+                                libelle = "Adresse",
+                                valeur = profilCharge.adresse.ifBlank { "Non renseignée" }
+                            )
+
+                            LigneInfo(
+                                icone = Icons.Filled.VerifiedUser,
+                                libelle = "Type de compte",
+                                valeur = if (profilCharge.role == "client") {
+                                    "Client"
+                                } else {
+                                    profilCharge.role.ifBlank { "Non renseigné" }
+                                }
+                            )
+                        }
                     }
                 }
             }
 
             else -> {
-                Text(
-                    text = messageErreur.ifBlank {
-                        "Aucune information disponible."
-                    },
-                    color = MaterialTheme.colorScheme.error
-                )
+                Box(modifier = Modifier.height(320.dp)) {
+                    EtatVide(
+                        icone = Icons.Filled.ErrorOutline,
+                        titre = "Profil indisponible",
+                        description = messageErreur.ifBlank {
+                            "Aucune information disponible."
+                        }
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
+        OutlinedButton(
             onClick = onDeconnexion,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .height(54.dp),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
         ) {
-            Text("Se déconnecter")
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Se déconnecter", style = MaterialTheme.typography.titleMedium)
         }
+    }
+}
+
+// Cercle blanc avec les initiales du client.
+@Composable
+private fun Avatar(profil: Utilisateur) {
+    val initiales = listOf(profil.prenom, profil.nom)
+        .mapNotNull { it.trim().firstOrNull()?.uppercaseChar() }
+        .joinToString("")
+        .ifBlank { "?" }
+
+    Box(
+        modifier = Modifier
+            .size(60.dp)
+            .clip(CircleShape)
+            .background(Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = initiales,
+            style = MaterialTheme.typography.titleLarge,
+            color = Flamme
+        )
     }
 }

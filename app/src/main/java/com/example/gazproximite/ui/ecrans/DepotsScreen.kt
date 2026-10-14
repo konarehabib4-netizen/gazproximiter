@@ -3,17 +3,22 @@ package com.example.gazproximite.ui.ecrans
 import android.content.Context
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SearchOff
+
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 
@@ -23,12 +28,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+import com.example.gazproximite.data.model.DepotAvecDistance
+import com.example.gazproximite.data.model.Format
+import com.example.gazproximite.data.model.Marque
+import com.example.gazproximite.data.model.cleStock
+import com.example.gazproximite.ui.composants.BadgeMarque
 import com.example.gazproximite.ui.composants.BarreRecherche
 import com.example.gazproximite.ui.composants.CarteDepot
+import com.example.gazproximite.ui.composants.Chargement
+import com.example.gazproximite.ui.composants.EnTeteDegrade
+import com.example.gazproximite.ui.composants.EtatVide
 
 import java.util.Locale
 
@@ -45,7 +57,10 @@ private fun normaliserTexte(texte: String): String {
 
 // Écran qui affiche tous les dépôts disponibles.
 @Composable
-fun DepotsScreen(context: Context) {
+fun DepotsScreen(
+    context: Context,
+    onDepotClique: (DepotAvecDistance) -> Unit = {}
+) {
 
     // Dépôts proches, chargés après la permission de localisation.
     val etat = rememberDepotsProches(context)
@@ -56,10 +71,15 @@ fun DepotsScreen(context: Context) {
         mutableStateOf("")
     }
 
+    // Marque choisie dans les filtres (null = toutes les marques).
+    var marqueFiltre by remember {
+        mutableStateOf<Marque?>(null)
+    }
+
     // Normalise le texte saisi.
     val rechercheNormalisee = normaliserTexte(recherche)
 
-    // Filtre les dépôts selon les informations et les stocks.
+    // Filtre les dépôts selon les informations, les stocks et la marque.
     val depotsFiltres = depots.filter { depotAvecDistance ->
 
         val depot = depotAvecDistance.depot
@@ -76,106 +96,125 @@ fun DepotsScreen(context: Context) {
             normaliserTexte(cle).contains(rechercheNormalisee)
         }
 
+        // Si une marque est choisie, le dépôt doit en avoir au moins un format en stock.
+        val correspondMarque = marqueFiltre?.let { marque ->
+            Format.entries.any { format -> depot.stock[cleStock(marque, format)] == true }
+        } ?: true
+
         // Si la recherche est vide, tous les dépôts sont affichés.
-        rechercheNormalisee.isEmpty() ||
-                correspondInformations ||
-                correspondStock
+        correspondMarque && (
+                rechercheNormalisee.isEmpty() ||
+                        correspondInformations ||
+                        correspondStock
+                )
     }
 
-    // Construction de l'interface.
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
-        Text(
-            text = "GazProximité",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        // En-tête avec la barre de recherche.
+        item {
+            EnTeteDegrade(
+                titre = "Dépôts de gaz",
+                sousTitre = if (etat.chargement) {
+                    "Recherche en cours..."
+                } else {
+                    "${depotsFiltres.size} dépôt(s) autour de vous"
+                }
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(4.dp))
+                BarreRecherche(
+                    recherche = recherche,
+                    onRechercheChange = { recherche = it }
+                )
+            }
+        }
 
-        Text(
-            text = "Trouvez un dépôt près de vous",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        // Filtres par marque.
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    FilterChip(
+                        selected = marqueFiltre == null,
+                        onClick = { marqueFiltre = null },
+                        label = { Text("Toutes") },
+                        colors = couleursFiltre()
+                    )
+                }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BarreRecherche(
-            recherche = recherche,
-            onRechercheChange = { recherche = it }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Liste des dépôts",
-            style = MaterialTheme.typography.titleLarge
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
+                items(Marque.entries) { marque ->
+                    FilterChip(
+                        selected = marqueFiltre == marque,
+                        onClick = {
+                            marqueFiltre = if (marqueFiltre == marque) null else marque
+                        },
+                        label = { Text(marque.libelle) },
+                        leadingIcon = { BadgeMarque(marque = marque, taille = 20.dp) },
+                        colors = couleursFiltre()
+                    )
+                }
+            }
+        }
 
         // Affichage adapté à l'état du chargement.
         when {
 
             // Les dépôts sont en cours de récupération.
-            etat.chargement -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("Recherche des dépôts proches...")
-                }
+            etat.chargement -> item {
+                Chargement(
+                    texte = "Recherche des dépôts proches...",
+                    modifier = Modifier.height(320.dp)
+                )
             }
 
             // Aucun dépôt n'a été récupéré.
-            depots.isEmpty() -> {
-                Text(
-                    text = etat.messageErreur.ifBlank {
-                        "Aucun dépôt disponible pour le moment."
-                    },
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            depots.isEmpty() -> item {
+                Box(modifier = Modifier.height(440.dp)) {
+                    MessageAucunDepot(etat = etat)
+                }
             }
 
             // Aucun résultat ne correspond à la recherche.
-            depotsFiltres.isEmpty() -> {
-                Text(
-                    text = "Aucun dépôt ne correspond à votre recherche.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            depotsFiltres.isEmpty() -> item {
+                Box(modifier = Modifier.height(360.dp)) {
+                    EtatVide(
+                        icone = Icons.Filled.SearchOff,
+                        titre = "Aucun résultat",
+                        description = "Aucun dépôt ne correspond à votre recherche. " +
+                                "Essayez un autre mot ou une autre marque."
+                    )
+                }
             }
 
             // Affiche la liste des dépôts filtrés.
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = depotsFiltres,
-                        key = { depotAvecDistance ->
-                            depotAvecDistance.depot.id
-                        }
-                    ) { depotAvecDistance ->
-                        CarteDepot(
-                            depotAvecDistance = depotAvecDistance,
-                            context = context
-                        )
-                    }
+            else -> items(
+                items = depotsFiltres,
+                key = { depotAvecDistance ->
+                    depotAvecDistance.depot.id
+                }
+            ) { depotAvecDistance ->
+                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    CarteDepot(
+                        depotAvecDistance = depotAvecDistance,
+                        context = context,
+                        onClick = { onDepotClique(depotAvecDistance) }
+                    )
                 }
             }
         }
     }
 }
+
+@Composable
+private fun couleursFiltre() = FilterChipDefaults.filterChipColors(
+    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    containerColor = MaterialTheme.colorScheme.surface
+)

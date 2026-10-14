@@ -1,25 +1,18 @@
 package com.example.gazproximite.ui.ecrans
+
 // Permet de transmettre l'activité Android à Firebase
 // pour gérer l'authentification par téléphone.
 import android.app.Activity
 
-// Composants de mise en page : colonne, espaces et défilement.
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-
-// Composants visuels Material 3.
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+// Icônes Material.
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Phone
 
 // Outils Compose pour gérer les états de l'écran.
 import androidx.compose.runtime.Composable
@@ -30,16 +23,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 
 // Outils pour le clavier.
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-
-// Outils pour définir les dimensions.
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 
 // Nos classes qui communiquent avec Firebase.
 import com.example.gazproximite.data.repository.ClientAuthRepository
 import com.example.gazproximite.data.repository.ClientRepository
+
+// Composants visuels de l'application.
+import com.example.gazproximite.ui.composants.BandeauMessage
+import com.example.gazproximite.ui.composants.ChampTexte
+import com.example.gazproximite.ui.composants.EtatVide
 
 // Permet d'exécuter des opérations suspend sans bloquer l'écran.
 import kotlinx.coroutines.launch
@@ -52,7 +47,6 @@ fun InscriptionClientScreen(
     authRepository: ClientAuthRepository,
     clientRepository: ClientRepository,
     onRetourAccueil: () -> Unit = {}
-
 ) {
 
     // =====================================================
@@ -85,6 +79,9 @@ fun InscriptionClientScreen(
     // Message destiné à informer le client du résultat.
     var message by remember { mutableStateOf("") }
 
+    // Indique si le message doit être affiché comme une erreur.
+    var erreur by remember { mutableStateOf(false) }
+
     // Indique que le profil a été enregistré avec succès.
     var inscriptionTerminee by remember { mutableStateOf(false) }
 
@@ -111,11 +108,7 @@ fun InscriptionClientScreen(
 
             // Appeler notre repository pour enregistrer les données.
             val resultat = clientRepository.creerProfilClient(
-
-                // Identifiant unique du compte Firebase.
                 uid = uid,
-
-                // Informations provenant du formulaire.
                 nom = nom,
                 prenom = prenom,
                 adresse = adresse,
@@ -126,19 +119,17 @@ fun InscriptionClientScreen(
 
             // Si Firestore a enregistré les données.
             resultat.onSuccess {
-
                 inscriptionTerminee = true
-
-                message = "Inscription réussie ! Profil enregistré."
+                message = ""
+                erreur = false
             }
 
                 // Si Firestore a rencontré une erreur.
-                .onFailure { erreur ->
-
-                    // Afficher la cause de l'échec.
+                .onFailure { e ->
                     message = "Erreur Firestore : ${
-                        erreur.localizedMessage ?: "erreur inconnue"
+                        e.localizedMessage ?: "erreur inconnue"
                     }"
+                    erreur = true
                 }
 
             // L'opération est terminée.
@@ -148,118 +139,97 @@ fun InscriptionClientScreen(
 
 
     // =====================================================
-    // 4. CONSTRUCTION DE L'INTERFACE
+    // 4. INSCRIPTION TERMINÉE
     // =====================================================
 
-    Column(
+    if (inscriptionTerminee) {
+        EtatVide(
+            icone = Icons.Filled.CheckCircle,
+            titre = "Bienvenue ${prenom.trim()} !",
+            description = "Ton compte client est prêt. " +
+                    "Connecte-toi pour trouver les dépôts de gaz proches de toi."
+        ) {
+            BoutonPrincipal(
+                texte = "Retour à l'accueil pour se connecter",
+                onClick = onRetourAccueil
+            )
+        }
+        return
+    }
 
-        // L'écran occupe toute la place disponible.
-        // Le défilement permet d'accéder aux champs
-        // même si l'écran est petit ou le clavier ouvert.
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
 
-        // Espacement vertical entre les éléments.
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    // =====================================================
+    // 5. FORMULAIRE
+    // =====================================================
+
+    // Après l'envoi du code, on bloque la modification
+    // des informations pour conserver la cohérence du formulaire.
+    val champsActifs = !codeEnvoye && !chargement
+
+    GabaritAuth(
+        titre = "Créer un compte",
+        sousTitre = "Quelques informations pour trouver ton gaz plus vite.",
+        icone = Icons.Filled.PersonAdd,
+        onRetour = onRetourAccueil,
+        retourActif = !chargement
     ) {
 
-        // Titre principal de l'application.
-        Text(
-            text = "GazProximité",
-            style = MaterialTheme.typography.headlineMedium
+        ChampTexte(
+            valeur = nom,
+            onValeurChange = { nom = it },
+            libelle = "Nom",
+            icone = Icons.Filled.Badge,
+            actif = champsActifs,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Words
+            )
         )
 
-        // Sous-titre de l'écran.
-        Text(
-            text = "Créer un compte client",
-            style = MaterialTheme.typography.titleLarge
+        ChampTexte(
+            valeur = prenom,
+            onValeurChange = { prenom = it },
+            libelle = "Prénom",
+            icone = Icons.Filled.Person,
+            actif = champsActifs,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Words
+            )
         )
 
-
-        // -------------------------------------------------
-        // CHAMP NOM
-        // -------------------------------------------------
-
-        OutlinedTextField(
-            value = nom,
-
-            // Chaque saisie met à jour la variable nom.
-            onValueChange = { nom = it },
-
-            label = { Text("Nom") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-
-            // Après l'envoi du code, on bloque la modification
-            // des informations pour conserver la cohérence du formulaire.
-            enabled = !codeEnvoye && !inscriptionTerminee
-        )
-
-
-        // -------------------------------------------------
-        // CHAMP PRÉNOM
-        // -------------------------------------------------
-
-        OutlinedTextField(
-            value = prenom,
-            onValueChange = { prenom = it },
-            label = { Text("Prénom") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = !codeEnvoye && !inscriptionTerminee
-        )
-
-
-        // -------------------------------------------------
-        // CHAMP TÉLÉPHONE
-        // -------------------------------------------------
-
-        OutlinedTextField(
-            value = telephone,
-            onValueChange = { telephone = it },
-            label = { Text("Téléphone avec indicatif") },
-
-            // Exemple de format attendu.
-            placeholder = { Text("+225XXXXXXXXXX") },
-
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
+        ChampTexte(
+            valeur = telephone,
+            onValeurChange = { telephone = it },
+            libelle = "Téléphone avec indicatif",
+            icone = Icons.Filled.Phone,
+            exemple = "+225 07 00 00 00 00",
+            actif = champsActifs,
 
             // Demande au téléphone d'afficher un clavier adapté.
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Phone
-            ),
-
-            enabled = !codeEnvoye && !inscriptionTerminee
+            )
         )
 
-
-        // -------------------------------------------------
-        // CHAMP ADRESSE FACULTATIF
-        // -------------------------------------------------
-
-        OutlinedTextField(
-            value = adresse,
-            onValueChange = { adresse = it },
-            label = { Text("Adresse (facultative)") },
-            placeholder = { Text("Ex. : Cocody, Angré") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = !codeEnvoye && !inscriptionTerminee
+        ChampTexte(
+            valeur = adresse,
+            onValeurChange = { adresse = it },
+            libelle = "Adresse (facultative)",
+            icone = Icons.Filled.Home,
+            exemple = "Ex. : Cocody, Angré",
+            actif = champsActifs
         )
 
 
         // =================================================
-        // 5. BOUTON D'ENVOI DU CODE SMS
+        // 6. BOUTON D'ENVOI DU CODE SMS
         // =================================================
 
         // Ce bouton apparaît tant que le code n'a pas été envoyé.
         if (!codeEnvoye) {
 
-            Button(
-
+            BoutonPrincipal(
+                texte = "Créer mon compte",
+                chargement = chargement,
                 onClick = {
 
                     // Vérifier que les champs obligatoires sont remplis.
@@ -271,21 +241,23 @@ fun InscriptionClientScreen(
                     ) {
                         message =
                             "Renseigne le nom, le prénom et le téléphone."
+                        erreur = true
 
                         // Arrêter le traitement de ce clic.
-                        return@Button
+                        return@BoutonPrincipal
                     }
 
                     // Vérifier la présence du signe + international.
                     if (!telephone.trim().startsWith("+")) {
                         message =
                             "Ajoute l'indicatif du pays, par exemple +225."
+                        erreur = true
 
-                        return@Button
+                        return@BoutonPrincipal
                     }
 
-                    // Informer le client et afficher le chargement.
-                    message = "Demande d'envoi du code..."
+                    // Afficher le chargement.
+                    message = ""
                     chargement = true
 
                     // Demander à Firebase d'envoyer le code.
@@ -296,66 +268,53 @@ fun InscriptionClientScreen(
 
                         // Appelé lorsque Firebase confirme l'envoi du code.
                         onCodeEnvoye = {
-
                             // Afficher le champ de saisie du code.
                             codeEnvoye = true
-
                             chargement = false
-
-                            message =
-                                "Code envoyé. Saisis le code reçu."
+                            message = "Code envoyé. Saisis le code reçu par SMS."
+                            erreur = false
                         },
 
                         // Firebase peut parfois vérifier automatiquement
                         // le numéro, sans demander au client de saisir le code.
                         onConnexionAutomatique = { uid ->
-
-                            // Enregistrer le profil avec l'UID reçu.
                             enregistrerProfil(uid)
                         },
 
                         // Appelé si l'envoi du code échoue.
-                        onErreur = { erreur ->
-
+                        onErreur = { detail ->
                             chargement = false
-                            message = "Erreur Firebase : $erreur"
+                            message = "Erreur Firebase : $detail"
+                            erreur = true
                         }
                     )
-                },
-
-                modifier = Modifier.fillMaxWidth(),
-
-                // Empêche les clics répétés pendant le chargement.
-                enabled = !chargement && !inscriptionTerminee
-
-            ) {
-                Text("Créer mon compte")
-            }
+                }
+            )
         }
 
 
         // =================================================
-        // 6. CHAMP ET BOUTON DE VÉRIFICATION DU CODE
+        // 7. CHAMP ET BOUTON DE VÉRIFICATION DU CODE
         // =================================================
 
         // Cette partie s'affiche après l'envoi du code.
-        else if (!inscriptionTerminee) {
+        else {
 
-            OutlinedTextField(
-                value = codeSMS,
+            ChampTexte(
+                valeur = codeSMS,
 
                 // Ne conserver que les chiffres, avec un maximum
                 // de six caractères.
-                onValueChange = {
+                onValeurChange = {
                     codeSMS = it
                         .filter { caractere -> caractere.isDigit() }
                         .take(6)
                 },
 
-                label = { Text("Code de vérification") },
-                placeholder = { Text("123456") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                libelle = "Code de vérification",
+                icone = Icons.Filled.Lock,
+                exemple = "123456",
+                actif = !chargement,
 
                 // Afficher un clavier numérique.
                 keyboardOptions = KeyboardOptions(
@@ -363,22 +322,23 @@ fun InscriptionClientScreen(
                 )
             )
 
-
-            Button(
-
+            BoutonPrincipal(
+                texte = "Vérifier le code et terminer",
+                chargement = chargement,
                 onClick = {
 
                     // Le code de test Firebase comporte six chiffres.
                     if (codeSMS.length != 6) {
                         message = "Saisis le code à 6 chiffres."
-                        return@Button
+                        erreur = true
+                        return@BoutonPrincipal
                     }
 
                     // Vérifier le code auprès de Firebase.
                     scope.launch {
 
                         chargement = true
-                        message = "Vérification du code..."
+                        message = ""
 
                         val resultat =
                             authRepository.verifierCodeSMS(codeSMS)
@@ -391,36 +351,18 @@ fun InscriptionClientScreen(
                         }
 
                             // Si le code est invalide ou expiré.
-                            .onFailure { erreur ->
+                            .onFailure { e ->
 
                                 chargement = false
 
                                 message = "Code invalide ou expiré : ${
-                                    erreur.localizedMessage
-                                        ?: "vérifie le code"
+                                    e.localizedMessage ?: "vérifie le code"
                                 }"
+                                erreur = true
                             }
                     }
-                },
-
-                modifier = Modifier.fillMaxWidth(),
-
-                // Désactiver le bouton pendant la vérification.
-                enabled = !chargement && !inscriptionTerminee
-
-            ) {
-                Text("Vérifier le code et terminer")
-            }
-        }
-
-
-        // =================================================
-        // 7. AFFICHER LE CHARGEMENT
-        // =================================================
-
-        // Le cercle tourne pendant une opération en cours.
-        if (chargement) {
-            CircularProgressIndicator()
+                }
+            )
         }
 
 
@@ -429,57 +371,7 @@ fun InscriptionClientScreen(
         // =================================================
 
         if (message.isNotBlank()) {
-
-            Text(
-                text = message,
-
-                // Utiliser la couleur principale en cas de succès,
-                // sinon la couleur d'erreur.
-                color = if (inscriptionTerminee) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-
-        // =================================================
-        // 9. CONFIRMATION DE L'INSCRIPTION
-        // =================================================
-
-        if (inscriptionTerminee) {
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Ton compte client est prêt.",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-
-        // =================================================
-        // 10. RETOUR À L'ACCUEIL
-        // =================================================
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = onRetourAccueil,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !chargement
-        ) {
-            Text(
-                if (inscriptionTerminee) {
-                    "Retour à l'accueil pour se connecter"
-                } else {
-                    "Retour à l'accueil"
-                }
-            )
+            BandeauMessage(message = message, erreur = erreur)
         }
     }
 }
-

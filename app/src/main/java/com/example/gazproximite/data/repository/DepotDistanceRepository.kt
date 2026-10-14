@@ -12,12 +12,13 @@ class DepotDistanceRepository(context: Context) {
     // Permet de récupérer la position du client.
     private val locationRepository = LocationRepository(context)
 
-    // Retourne les dépôts avec leur distance par rapport au client.
-    suspend fun recupererDepotsAvecDistance(): List<DepotAvecDistance> {
+    // Retourne les dépôts avec leur distance par rapport au client,
+    // ou null si la position du client n'a pas pu être obtenue.
+    suspend fun recupererDepotsAvecDistance(): List<DepotAvecDistance>? {
 
         // Étape 1 : récupérer la position du client.
         val positionClient = locationRepository.recupererPosition()
-            ?: return emptyList()
+            ?: return null
 
         // Étape 2 : récupérer les dépôts enregistrés dans Firestore.
         val depots = depotRepository.recupererDepots()

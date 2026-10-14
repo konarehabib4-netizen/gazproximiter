@@ -1,17 +1,12 @@
 package com.example.gazproximite.ui.ecrans
+
 import android.app.Activity
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,11 +14,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import com.example.gazproximite.data.repository.ClientAuthRepository
 import com.example.gazproximite.data.repository.ClientRepository
+import com.example.gazproximite.ui.composants.BandeauMessage
+import com.example.gazproximite.ui.composants.ChampTexte
 import kotlinx.coroutines.launch
 
 // @Composable indique que cette fonction construit une interface Compose.
@@ -98,27 +93,26 @@ fun ConnexionClientScreen(
         }
     }
 
-    // Column dispose les éléments verticalement, les uns sous les autres.
-    Column(
-        modifier = Modifier
-            .fillMaxSize() // Utilise toute la place disponible.
-            .padding(24.dp), // Ajoute une marge intérieure.
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    GabaritAuth(
+        titre = if (codeEnvoye) "Vérification" else "Connexion",
+        sousTitre = if (codeEnvoye) {
+            "Saisis le code à 6 chiffres envoyé au ${telephone.trim()}."
+        } else {
+            "Entre ton numéro de téléphone pour recevoir un code de connexion par SMS."
+        },
+        icone = if (codeEnvoye) Icons.Filled.Lock else Icons.Filled.Sms,
+        onRetour = onRetourAccueil,
+        retourActif = !chargement
     ) {
-        Text(
-            text = "Connexion client",
-            style = MaterialTheme.typography.headlineMedium
-        )
 
         // Champ dans lequel le client saisit son numéro de téléphone.
-        OutlinedTextField(
-            value = telephone, // Valeur actuellement affichée.
-            onValueChange = { telephone = it }, // Met à jour la saisie.
-            label = { Text("Numéro de téléphone") },
-            placeholder = { Text("+225XXXXXXXXXX") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = !codeEnvoye && !chargement,
+        ChampTexte(
+            valeur = telephone,
+            onValeurChange = { telephone = it },
+            libelle = "Numéro de téléphone",
+            icone = Icons.Filled.Phone,
+            exemple = "+225 07 00 00 00 00",
+            actif = !codeEnvoye && !chargement,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Phone
             )
@@ -126,7 +120,9 @@ fun ConnexionClientScreen(
 
         // Tant que le code n'a pas été envoyé, on affiche le bouton d'envoi.
         if (!codeEnvoye) {
-            Button(
+            BoutonPrincipal(
+                texte = "Recevoir un code SMS",
+                chargement = chargement,
                 onClick = {
                     // Vérifie que le numéro n'est pas vide et commence par +.
                     if (
@@ -138,12 +134,12 @@ fun ConnexionClientScreen(
                         erreur = true
 
                         // Arrête le traitement de ce clic.
-                        return@Button
+                        return@BoutonPrincipal
                     }
 
                     // Informe l'utilisateur que l'envoi est en cours.
                     chargement = true
-                    message = "Envoi du code en cours..."
+                    message = ""
                     erreur = false
 
                     // Demande à Firebase Authentication d'envoyer le SMS.
@@ -174,46 +170,44 @@ fun ConnexionClientScreen(
                             erreur = true
                         }
                     )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !chargement
-            ) {
-                Text("Recevoir un code SMS")
-            }
+                }
+            )
         } else {
             // Le code a été envoyé : le client peut maintenant le saisir.
-            OutlinedTextField(
-                value = codeSMS,
+            ChampTexte(
+                valeur = codeSMS,
 
                 // Ne conserve que les chiffres, avec une longueur maximale de 6.
-                onValueChange = {
+                onValeurChange = {
                     codeSMS = it
                         .filter { caractere -> caractere.isDigit() }
                         .take(6)
                 },
 
-                label = { Text("Code de vérification") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = !chargement,
+                libelle = "Code de vérification",
+                icone = Icons.Filled.Lock,
+                exemple = "123456",
+                actif = !chargement,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number
                 )
             )
 
-            Button(
+            BoutonPrincipal(
+                texte = "Vérifier le code",
+                chargement = chargement,
                 onClick = {
                     // Firebase utilise ici un code de vérification à 6 chiffres.
                     if (codeSMS.length != 6) {
                         message = "Saisis le code à 6 chiffres."
                         erreur = true
-                        return@Button
+                        return@BoutonPrincipal
                     }
 
                     // Lance une coroutine pour effectuer les opérations asynchrones.
                     scope.launch {
                         chargement = true
-                        message = "Vérification du code SMS..."
+                        message = ""
                         erreur = false
 
                         // Vérifie le code auprès de Firebase Authentication.
@@ -238,40 +232,25 @@ fun ConnexionClientScreen(
                             erreur = true
                         }
                     }
+                }
+            )
+
+            // Permet de corriger le numéro saisi.
+            TextButton(
+                onClick = {
+                    codeEnvoye = false
+                    codeSMS = ""
+                    message = ""
                 },
-                modifier = Modifier.fillMaxWidth(),
                 enabled = !chargement
             ) {
-                Text("Vérifier le code")
+                Text("Modifier le numéro")
             }
-        }
-
-        // Affiche un indicateur animé pendant les opérations.
-        if (chargement) {
-            CircularProgressIndicator()
         }
 
         // Affiche le message de résultat, en rouge si c'est une erreur.
         if (message.isNotBlank()) {
-            Text(
-                text = message,
-                color = if (erreur) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.primary
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Permet de revenir à l'écran d'accueil.
-        Button(
-            onClick = onRetourAccueil,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !chargement
-        ) {
-            Text("Retour à l'accueil")
+            BandeauMessage(message = message, erreur = erreur)
         }
     }
 }

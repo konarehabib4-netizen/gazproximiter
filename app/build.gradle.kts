@@ -41,7 +41,7 @@ android {
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
-    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
@@ -50,6 +50,14 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
+    // Carte OpenStreetMap (sans clé API)
+    implementation(libs.osmdroid.android)
+
+    // Chargement des photos des dépôts depuis Internet
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))

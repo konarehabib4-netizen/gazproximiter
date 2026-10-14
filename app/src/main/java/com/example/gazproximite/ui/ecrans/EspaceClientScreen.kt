@@ -1,9 +1,12 @@
 package com.example.gazproximite.ui.ecrans
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,8 +31,19 @@ fun EspaceClientScreen(
         mutableStateOf<DepotAvecDistance?>(null)
     }
 
+    // Le bouton "retour" du téléphone ferme le détail du dépôt.
+    BackHandler(enabled = depotSelectionne != null) {
+        depotSelectionne = null
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
+
+        // Les en-têtes passent derrière la barre d'état :
+        // chaque écran gère lui-même la marge du haut.
+        contentWindowInsets = WindowInsets(0),
+
         bottomBar = {
             BottomBar(
                 ongletSelectionne = ongletSelectionne,
@@ -46,38 +60,59 @@ fun EspaceClientScreen(
                 .fillMaxSize()
                 .padding(paddingInterieur)
         ) {
-            when (ongletSelectionne) {
+            val depot = depotSelectionne
+
+            // Un dépôt choisi (depuis l'accueil ou la liste) affiche son détail.
+            if (depot != null) {
+                DetailDepotScreen(
+                    depotAvecDistance = depot,
+                    context = context,
+                    onRetour = {
+                        depotSelectionne = null
+                    }
+                )
+            } else when (ongletSelectionne) {
 
                 // ACCUEIL : affiche les dépôts les plus proches.
                 OngletClient.ACCUEIL -> {
-                    val depot = depotSelectionne
+                    AccueilClientScreen(
+                        context = context,
+                        onDepotClique = { depotClique ->
+                            depotSelectionne = depotClique
+                        },
+                        onVoirTout = {
+                            ongletSelectionne = OngletClient.DEPOTS
+                        }
+                    )
+                }
 
-                    if (depot != null) {
-                        DetailDepotScreen(
-                            depotAvecDistance = depot,
-                            context = context,
-                            onRetour = {
-                                depotSelectionne = null
-                            }
-                        )
-                    } else {
-                        AccueilClientScreen(
-                            context = context,
-                            onDepotClique = { depotClique ->
-                                depotSelectionne = depotClique
-                            }
-                        )
-                    }
+                // CARTE : dépôts sur une carte, avec mode simulation.
+                OngletClient.CARTE -> {
+                    CarteScreen(
+                        context = context,
+                        onDepotClique = { depotClique ->
+                            depotSelectionne = depotClique
+                        }
+                    )
                 }
 
                 // DÉPÔTS : liste complète avec recherche.
                 OngletClient.DEPOTS -> {
-                    DepotsScreen(context = context)
+                    DepotsScreen(
+                        context = context,
+                        onDepotClique = { depotClique ->
+                            depotSelectionne = depotClique
+                        }
+                    )
                 }
 
                 // FAVORIS : écran provisoire.
                 OngletClient.FAVORIS -> {
-                    FavorisScreen()
+                    FavorisScreen(
+                        onExplorer = {
+                            ongletSelectionne = OngletClient.DEPOTS
+                        }
+                    )
                 }
 
                 // MON COMPTE : profil et déconnexion.

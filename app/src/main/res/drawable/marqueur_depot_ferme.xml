@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marqueur de carte : dépôt fermé (gris). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="50dp"
+    android:viewportWidth="48"
+    android:viewportHeight="60">
+    <path android:fillColor="#40000000" android:pathData="M16,57a8,2.5 0,1 0,16 0a8,2.5 0,1 0,-16 0z" />
+    <path android:fillColor="#8A93A6" android:pathData="M24,57C24,57 4,36 4,22A20,20 0,0 1,44 22C44,36 24,57 24,57Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M11,22a13,13 0,1 0,26 0a13,13 0,1 0,-26 0z" />
+    <group android:scaleX="0.8" android:scaleY="0.8" android:translateX="14.4" android:translateY="12.8">
+        <path android:fillColor="#8A93A6" android:pathData="M10,1h4v2h-4z" />
+        <path android:fillColor="#8A93A6" android:pathData="M8,3h8a1,1 0,0 1,1 1v2.5h-10v-2.5a1,1 0,0 1,1 -1z" />
+        <path android:fillColor="#8A93A6" android:pathData="M9,7h6c2.2,0 3.5,1.5 3.5,3.5v8c0,2 -1.3,3.5 -3.5,3.5h-6c-2.2,0 -3.5,-1.5 -3.5,-3.5v-8c0,-2 1.3,-3.5 3.5,-3.5zM5.5,12.5v3h13v-3z" />
+    </group>
+</vector>
