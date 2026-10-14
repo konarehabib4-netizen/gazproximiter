@@ -1,4 +1,3 @@
-
 package com.example.gazproximite.data.repository
 import android.content.Context
 import com.example.gazproximite.data.location.LocationRepository

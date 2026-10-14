@@ -1,4 +1,4 @@
-package ui.ecrans
+package com.example.gazproximite.ui.ecrans
 // Permet de transmettre l'activité Android à Firebase
 // pour gérer l'authentification par téléphone.
 import android.app.Activity
@@ -289,7 +289,7 @@ fun InscriptionClientScreen(
                     chargement = true
 
                     // Demander à Firebase d'envoyer le code.
-                    authRepository.envoyerCodeSMSPourInscription(
+                    authRepository.envoyerCodeSMS(
 
                         activity = activity,
                         telephone = telephone.trim(),
@@ -457,6 +457,27 @@ fun InscriptionClientScreen(
             Text(
                 text = "Ton compte client est prêt.",
                 style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+
+        // =================================================
+        // 10. RETOUR À L'ACCUEIL
+        // =================================================
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = onRetourAccueil,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !chargement
+        ) {
+            Text(
+                if (inscriptionTerminee) {
+                    "Retour à l'accueil pour se connecter"
+                } else {
+                    "Retour à l'accueil"
+                }
             )
         }
     }

@@ -1,4 +1,3 @@
-
 package com.example.gazproximite.data.repository
 
 // Modèle représentant un dépôt
@@ -164,32 +163,14 @@ class DepotRepository {
             mutableMapOf<String, Boolean>()
 
 
-        // Liste des marques disponibles dans l'application.
-        val marques =
-            listOf(
-                "petroci",
-                "totalenergies",
-                "shell",
-                "oryx",
-                "corlay"
-            )
+        // Création des différentes combinaisons à partir
+        // des enums Marque et Format, avec la même fonction
+        // cleStock() que pour la lecture du stock.
+        for (marque in Marque.entries) {
 
+            for (format in Format.entries) {
 
-        // Liste des formats disponibles.
-        val formats =
-            listOf(
-                "b6",
-                "b12",
-                "b28"
-            )
-
-
-        // Création des différentes combinaisons.
-        for (marque in marques) {
-
-            for (format in formats) {
-
-                stockInitial["${marque}_${format}"] = false
+                stockInitial[cleStock(marque, format)] = false
             }
         }
 

@@ -1,5 +1,4 @@
-
-package ui.ecrans
+package com.example.gazproximite.ui.ecrans
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,6 +56,47 @@ fun ConnexionClientScreen(
 
     // Permet d'exécuter des opérations suspendues, comme les lectures Firestore.
     val scope = rememberCoroutineScope()
+
+    // Vérifie que le compte connecté possède bien un profil client.
+    // Appelée après la vérification du code SMS,
+    // ou quand Firebase connecte automatiquement le client.
+    suspend fun verifierProfilClient(uid: String) {
+        chargement = true
+        message = "Vérification du profil client..."
+        erreur = false
+
+        // Recherche le profil correspondant à cet UID
+        // dans la collection Firestore "utilisateurs".
+        val resultatProfil =
+            clientRepository.recupererProfilClient(uid)
+
+        if (resultatProfil.isSuccess) {
+            val profil = resultatProfil.getOrNull()
+
+            // Le profil doit exister et avoir le rôle "client".
+            if (profil != null && profil.role == "client") {
+                // La connexion et la vérification du profil
+                // ont réussi : on transmet l'UID à MainActivity.
+                chargement = false
+                onConnexionReussie(uid)
+            } else {
+                // Aucun profil client valide :
+                // on déconnecte le compte Firebase.
+                authRepository.deconnecter()
+                chargement = false
+                message =
+                    "Aucun profil client trouvé. Crée d'abord un compte client."
+                erreur = true
+            }
+        } else {
+            // La lecture Firestore a échoué.
+            // On ne considère pas le profil comme vérifié.
+            chargement = false
+            message =
+                "Impossible de vérifier ton profil. Vérifie ta connexion Internet."
+            erreur = true
+        }
+    }
 
     // Column dispose les éléments verticalement, les uns sous les autres.
     Column(
@@ -120,6 +160,13 @@ fun ConnexionClientScreen(
                             erreur = false
                         },
 
+                        // Firebase a vérifié le numéro sans code à saisir.
+                        onConnexionAutomatique = { uid ->
+                            scope.launch {
+                                verifierProfilClient(uid)
+                            }
+                        },
+
                         // Cette fonction est appelée si Firebase rencontre une erreur.
                         onErreur = { detail ->
                             chargement = false
@@ -175,45 +222,9 @@ fun ConnexionClientScreen(
                             authRepository.verifierCodeSMS(codeSMS)
 
                         if (resultatAuth.isSuccess) {
-                            // Récupère l'identifiant unique du compte connecté.
-                            val uid = resultatAuth.getOrNull()!!
-
-                            message = "Vérification du profil client..."
-
-                            // Recherche le profil correspondant à cet UID
-                            // dans la collection Firestore "utilisateurs".
-                            val resultatProfil =
-                                clientRepository.recupererProfilClient(uid)
-
-                            if (resultatProfil.isSuccess) {
-                                val profil = resultatProfil.getOrNull()
-
-                                // Le profil doit exister et avoir le rôle "client".
-                                if (
-                                    profil != null &&
-                                    profil["role"] == "client"
-                                ) {
-                                    // La connexion et la vérification du profil
-                                    // ont réussi : on transmet l'UID à MainActivity.
-                                    chargement = false
-                                    onConnexionReussie(uid)
-                                } else {
-                                    // Aucun profil client valide :
-                                    // on déconnecte le compte Firebase.
-                                    authRepository.deconnecter()
-                                    chargement = false
-                                    message =
-                                        "Aucun profil client trouvé. Crée d'abord un compte client."
-                                    erreur = true
-                                }
-                            } else {
-                                // La lecture Firestore a échoué.
-                                // On ne considère pas le profil comme vérifié.
-                                chargement = false
-                                message =
-                                    "Impossible de vérifier ton profil. Vérifie ta connexion Internet."
-                                erreur = true
-                            }
+                            // Récupère l'identifiant unique du compte connecté,
+                            // puis vérifie son profil client.
+                            verifierProfilClient(resultatAuth.getOrThrow())
                         } else {
                             // Le code SMS est invalide ou la connexion a échoué.
                             chargement = false

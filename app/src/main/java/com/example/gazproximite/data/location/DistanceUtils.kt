@@ -1,7 +1,7 @@
-
 package com.example.gazproximite.data.location
 
 import android.location.Location
+import java.util.Locale
 
 fun calculerDistanceMetres(
     latitudeClient: Double,
@@ -23,3 +23,12 @@ fun calculerDistanceMetres(
     return resultat[0]
 }
 
+// Convertit une distance en texte lisible.
+// Exemples : 850f -> "850 m", 2340f -> "2,34 km".
+fun formaterDistance(distanceMetres: Float): String {
+    return if (distanceMetres < 1000) {
+        "${distanceMetres.toInt()} m"
+    } else {
+        String.format(Locale.FRANCE, "%.2f km", distanceMetres / 1000.0)
+    }
+}

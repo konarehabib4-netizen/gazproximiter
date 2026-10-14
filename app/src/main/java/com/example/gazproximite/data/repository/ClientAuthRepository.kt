@@ -1,4 +1,3 @@
-
 package com.example.gazproximite.data.repository
 
 import android.app.Activity
@@ -37,10 +36,13 @@ class ClientAuthRepository {
     // ENVOYER LE CODE SMS
     // =========================================================
 
+    // Utilisée pour la connexion ET pour l'inscription :
+    // dans les deux cas, Firebase vérifie le numéro de la même façon.
     fun envoyerCodeSMS(
         activity: Activity,
         telephone: String,
         onCodeEnvoye: () -> Unit,
+        onConnexionAutomatique: (String) -> Unit,
         onErreur: (String) -> Unit
     ) {
 
@@ -105,20 +107,26 @@ class ClientAuthRepository {
                             // vérifier automatiquement le numéro.
                             //
                             // On connecte alors directement
-                            // l'utilisateur.
+                            // l'utilisateur et on transmet son UID.
                             auth
                                 .signInWithCredential(
                                     credential
                                 )
-                                .addOnSuccessListener {
+                                .addOnSuccessListener { resultat ->
 
-                                    onCodeEnvoye()
+                                    val uid = resultat.user?.uid
+
+                                    if (uid != null) {
+                                        onConnexionAutomatique(uid)
+                                    } else {
+                                        onErreur("Identifiant utilisateur introuvable.")
+                                    }
                                 }
                                 .addOnFailureListener { exception ->
 
                                     onErreur(
                                         exception.message
-                                            ?: "Erreur de connexion"
+                                            ?: "Échec de la connexion automatique."
                                     )
                                 }
                         }
@@ -216,78 +224,6 @@ class ClientAuthRepository {
 
     fun utilisateurConnecte() =
         auth.currentUser
-
-
-
-    // Cette fonction demande à Firebase d'envoyer un code SMS
-// au numéro de téléphone fourni pour créer un compte client.
-    fun envoyerCodeSMSPourInscription(
-        activity: Activity,
-        telephone: String,
-        onCodeEnvoye: () -> Unit,
-        onConnexionAutomatique: (String) -> Unit,
-        onErreur: (String) -> Unit
-    ) {
-        // Préparation de la demande de vérification du numéro.
-        val options = PhoneAuthOptions.newBuilder(auth)
-            .setPhoneNumber(telephone)
-            .setTimeout(60L, TimeUnit.SECONDS)
-            .setActivity(activity)
-            .setCallbacks(
-                object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-
-                    // Firebase a envoyé le code SMS.
-                    override fun onCodeSent(
-                        verificationIdFirebase: String,
-                        token: PhoneAuthProvider.ForceResendingToken
-                    ) {
-                        // On conserve l'identifiant pour vérifier le code plus tard.
-                        verificationId = verificationIdFirebase
-
-                        // On informe l'écran que le code a été envoyé.
-                        onCodeEnvoye()
-                    }
-
-                    // Firebase a vérifié automatiquement le numéro.
-                    override fun onVerificationCompleted(
-                        credential: PhoneAuthCredential
-                    ) {
-                        auth.signInWithCredential(credential)
-                            .addOnSuccessListener { resultat ->
-                                val uid = resultat.user?.uid
-
-                                if (uid != null) {
-                                    // Le compte Firebase est connecté.
-                                    onConnexionAutomatique(uid)
-                                } else {
-                                    onErreur("Identifiant utilisateur introuvable.")
-                                }
-                            }
-                            .addOnFailureListener { exception ->
-                                onErreur(
-                                    exception.message
-                                        ?: "Échec de la connexion automatique."
-                                )
-                            }
-                    }
-
-                    // Firebase n'a pas pu vérifier le numéro.
-                    override fun onVerificationFailed(
-                        exception: FirebaseException
-                    ) {
-                        onErreur(
-                            exception.message
-                                ?: "Échec de l'envoi du code SMS."
-                        )
-                    }
-                }
-            )
-            .build()
-
-        // Lancement de la vérification du numéro par Firebase.
-        PhoneAuthProvider.verifyPhoneNumber(options)
-    }
-
 
 
     // =========================================================

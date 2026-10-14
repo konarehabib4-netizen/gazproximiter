@@ -1,5 +1,6 @@
-
 package com.example.gazproximite.data.repository
+
+import com.example.gazproximite.data.model.Utilisateur
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -49,7 +50,7 @@ class ClientRepository {
 
     suspend fun recupererProfilClient(
         uid: String
-    ): Result<Map<String, Any>?> {
+    ): Result<Utilisateur?> {
 
         return try {
             // Rechercher le document correspondant à l'UID Firebase.
@@ -58,15 +59,11 @@ class ClientRepository {
                 .get()
                 .await()
 
-            // Vérifier si le profil existe dans Firestore.
+            // Si le profil existe, on le transforme en objet Utilisateur.
+            // Sinon, on renvoie null.
             if (document.exists()) {
-
-                // Renvoyer les données du profil.
-                Result.success(document.data)
-
+                Result.success(document.toObject(Utilisateur::class.java))
             } else {
-
-                // Aucun profil n'a été trouvé.
                 Result.success(null)
             }
 
